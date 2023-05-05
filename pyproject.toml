@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "udemy"
+name = "educa"
 version = "0.1.0"
 description = ""
 authors = ["Gabriel Lustosa <lustosaki2@gmail.com>"]
@@ -34,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "udemy.settings.test"
+DJANGO_SETTINGS_MODULE = "educa.settings.test"
 addopts = "--doctest-modules --strict-markers"
 
 
@@ -47,5 +47,5 @@ line_length = 79
 lint = "blue . && isort ."
 docs = "mkdocs serve"
 pre_test = "task lint"
-test = "pytest -s -x -vv --cov=udemy"
+test = "pytest -s -x -vv --cov=educa"
 coverage = "coverage html"
