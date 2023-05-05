@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class UserConfig(AppConfig):
+class QuestionConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'udemy.apps.user'
+    name = 'udemy.apps.lesson.sub_apps.question'

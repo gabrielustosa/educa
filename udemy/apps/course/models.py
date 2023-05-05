@@ -1,8 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from udemy.apps.core.models import CreatorBase, TimeStampedBase, ContentBase
-from udemy.apps.course.apps.category.models import Category
+from udemy.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
+from udemy.apps.course.sub_apps.category.models import Category
 from udemy.apps.user.models import User
 
 
@@ -41,6 +41,7 @@ class CourseRelation(CreatorBase, TimeStampedBase):
     """
     Representa uma relação do estudante com o curso.
     """
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     class Meta:

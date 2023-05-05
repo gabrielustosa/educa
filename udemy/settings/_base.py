@@ -39,18 +39,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # application apps
-    'udemy.apps.base.action',
-    'udemy.apps.base.answer',
+    'udemy.apps.generic.action',
+    'udemy.apps.generic.answer',
     'udemy.apps.course',
-    'udemy.apps.course.category',
-    'udemy.apps.course.message',
-    'udemy.apps.course.rating',
+    'udemy.apps.course.sub_apps.category',
+    'udemy.apps.course.sub_apps.message',
+    'udemy.apps.course.sub_apps.rating',
     'udemy.apps.lesson',
-    'udemy.apps.lesson.content',
-    'udemy.apps.lesson.note',
-    'udemy.apps.lesson.question',
+    'udemy.apps.lesson.sub_apps.content',
+    'udemy.apps.lesson.sub_apps.note',
+    'udemy.apps.lesson.sub_apps.question',
     'udemy.apps.module',
-    'udemy.apps.module.quiz',
+    'udemy.apps.module.sub_apps.quiz',
     'udemy.apps.user',
 ]
 
@@ -145,3 +145,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
+
+# AUTH_USER_MODEL = 'user.User'

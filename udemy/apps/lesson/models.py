@@ -1,6 +1,6 @@
 from django.db import models
 
-from udemy.apps.core.models import CreatorBase, TimeStampedBase, ContentBase
+from udemy.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
 from udemy.apps.course.models import Course
 from udemy.apps.module.models import Module
 
@@ -8,6 +8,9 @@ from udemy.apps.module.models import Module
 class Lesson(ContentBase):
     """
     Este modelo representa uma aula de um módulo de um curso.
+
+    Fields:
+        order: representa a sua ordem crescente dentro do módulo, a qual é definida automáticamente.
     """
 
     video = models.URLField()
@@ -50,9 +53,7 @@ class LessonRelation(CreatorBase, TimeStampedBase):
 
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        related_name='lesson_relations'
+        Course, on_delete=models.CASCADE, related_name='lesson_relations'
     )
     done = models.BooleanField(default=False)
 

@@ -9,6 +9,8 @@ readme = "README.md"
 python = "^3.11"
 django = "^4.2.1"
 python-dotenv = "^1.0.0"
+django-ordered-model = "^3.7.4"
+psycopg2-binary = "^2.9.6"
 
 
 [tool.poetry.group.dev.dependencies]
