@@ -1,11 +1,12 @@
 from django.db import models
+from ordered_model.models import OrderedModel
 
 from educa.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
 from educa.apps.course.models import Course
 from educa.apps.module.models import Module
 
 
-class Lesson(ContentBase):
+class Lesson(ContentBase, OrderedModel):
     """
     Este modelo representa uma aula de um módulo de um curso.
 
@@ -26,21 +27,10 @@ class Lesson(ContentBase):
         on_delete=models.CASCADE,
     )
 
-    # order_in_respect = ('course', 'module')
+    order_with_respect_to = ('course', 'module')
 
-    # def get_next_order(self):
-    #     queryset = self.get_queryset()
-    #     if queryset.exists():
-    #         last_order = queryset.aggregate(ls=models.Max('order'))['ls']
-    #         order = last_order + 1
-    #     else:
-    #         last_order = self.course.lessons.aggregate(ls=models.Max('order'))['ls']
-    #         order = last_order + 1 if last_order else 1
-    #     return order
-    #
-    # def do_after_create(self):
-    #     self.course.lessons.filter(order__gte=self.order).update(
-    #         order=models.ExpressionWrapper(models.F('order') + 1, output_field=models.PositiveIntegerField()))
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
         return f'Lesson({self.title}) - Course({self.course_id})'

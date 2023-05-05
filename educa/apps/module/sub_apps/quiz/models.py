@@ -2,13 +2,14 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
+from ordered_model.models import OrderedModel
 
 from educa.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
 from educa.apps.course.models import Course
 from educa.apps.module.models import Module
 
 
-class Quiz(ContentBase, TimeStampedBase):
+class Quiz(ContentBase, TimeStampedBase, OrderedModel):
     """
     Este modelo representa um quiz de multipla escolha sobre o tema do módulo.
 
@@ -30,13 +31,17 @@ class Quiz(ContentBase, TimeStampedBase):
         related_name='quizzes',
         on_delete=models.CASCADE,
     )
-    # order_in_respect = ('course', 'module')
+
+    order_with_respect_to = ('course', 'module')
+
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
         return f'Quiz({self.title}) - Course({self.course_id})'
 
 
-class QuizQuestion(TimeStampedBase):
+class QuizQuestion(TimeStampedBase, OrderedModel):
     """
     Este modelo representa cada pergunta e resposta de um objeto Quiz.
 
@@ -61,7 +66,10 @@ class QuizQuestion(TimeStampedBase):
         on_delete=models.CASCADE,
     )
 
-    # order_in_respect = ('quiz',)
+    order_with_respect_to = 'quiz'
+
+    class Meta:
+        ordering = ['order']
 
     def save(self, *args, **kwargs):
         if (self.correct_response + 1) > len(self.answers):
