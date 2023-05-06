@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from ._base import *
 
 DEBUG = False
@@ -5,9 +9,3 @@ DEBUG = False
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
-
-INSTALLED_APPS.extend(
-    [
-        'educa.apps.core',
-    ]
-)

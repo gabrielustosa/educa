@@ -9,21 +9,60 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Quiz',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Creation Date and Time')),
-                ('modified', models.DateTimeField(auto_now=True, verbose_name='Modification Date and Time')),
-                ('title', models.CharField(max_length=256, verbose_name='Title')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'created',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        verbose_name='Creation Date and Time',
+                    ),
+                ),
+                (
+                    'modified',
+                    models.DateTimeField(
+                        auto_now=True,
+                        verbose_name='Modification Date and Time',
+                    ),
+                ),
+                (
+                    'title',
+                    models.CharField(max_length=256, verbose_name='Title'),
+                ),
                 ('description', models.TextField(verbose_name='Description')),
-                ('is_published', models.BooleanField(default=False, verbose_name='Is Published')),
-                ('order', models.PositiveIntegerField(db_index=True, editable=False, verbose_name='order')),
-                ('pass_percent', models.PositiveIntegerField(validators=[django.core.validators.MaxValueValidator(100)])),
+                (
+                    'is_published',
+                    models.BooleanField(
+                        default=False, verbose_name='Is Published'
+                    ),
+                ),
+                (
+                    'order',
+                    models.PositiveIntegerField(
+                        db_index=True, editable=False, verbose_name='order'
+                    ),
+                ),
+                (
+                    'pass_percent',
+                    models.PositiveIntegerField(
+                        validators=[
+                            django.core.validators.MaxValueValidator(100)
+                        ]
+                    ),
+                ),
             ],
             options={
                 'ordering': ['order'],
@@ -32,13 +71,43 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='QuizQuestion',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Creation Date and Time')),
-                ('modified', models.DateTimeField(auto_now=True, verbose_name='Modification Date and Time')),
-                ('order', models.PositiveIntegerField(db_index=True, editable=False, verbose_name='order')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'created',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        verbose_name='Creation Date and Time',
+                    ),
+                ),
+                (
+                    'modified',
+                    models.DateTimeField(
+                        auto_now=True,
+                        verbose_name='Modification Date and Time',
+                    ),
+                ),
+                (
+                    'order',
+                    models.PositiveIntegerField(
+                        db_index=True, editable=False, verbose_name='order'
+                    ),
+                ),
                 ('question', models.TextField()),
                 ('feedback', models.TextField()),
-                ('answers', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), size=None)),
+                (
+                    'answers',
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), size=None
+                    ),
+                ),
                 ('time_in_minutes', models.FloatField()),
                 ('correct_response', models.IntegerField()),
             ],
@@ -49,9 +118,29 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='QuizRelation',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Creation Date and Time')),
-                ('modified', models.DateTimeField(auto_now=True, verbose_name='Modification Date and Time')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'created',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        verbose_name='Creation Date and Time',
+                    ),
+                ),
+                (
+                    'modified',
+                    models.DateTimeField(
+                        auto_now=True,
+                        verbose_name='Modification Date and Time',
+                    ),
+                ),
                 ('done', models.BooleanField(default=False)),
             ],
         ),

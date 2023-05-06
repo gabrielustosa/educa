@@ -7,17 +7,32 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Category',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=256, verbose_name='Title')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'title',
+                    models.CharField(max_length=256, verbose_name='Title'),
+                ),
                 ('description', models.TextField(verbose_name='Description')),
-                ('is_published', models.BooleanField(default=False, verbose_name='Is Published')),
+                (
+                    'is_published',
+                    models.BooleanField(
+                        default=False, verbose_name='Is Published'
+                    ),
+                ),
                 ('slug', models.SlugField(max_length=255, unique=True)),
             ],
             options={

@@ -72,7 +72,9 @@ class QuizQuestion(TimeStampedBase, OrderedModel):
         ordering = ['order']
 
     def save(self, *args, **kwargs):
-        if (self.correct_response + 1) > len(self.answers):
+        try:
+            self.answers[self.correct_response]
+        except IndexError:
             raise ValidationError({'correct_response': 'invalid response'})
         super().save(*args, **kwargs)
 
