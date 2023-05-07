@@ -5,7 +5,7 @@ from educa.apps.course.sub_apps.category.schema import CategoryOut
 from tests.base import AuthenticatedClient
 from tests.factories.category import CategoryFactory
 
-client = AuthenticatedClient(user_options={'is_staff': True})
+client = AuthenticatedClient()
 
 category_url = reverse_lazy('api-1.0.0:create_category')
 
