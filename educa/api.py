@@ -2,6 +2,7 @@ from django.core.exceptions import PermissionDenied
 from ninja import NinjaAPI
 
 from educa.apps.course.api import course_router
+from educa.apps.user.api import user_router
 from educa.apps.user.auth.api import auth_router
 from educa.apps.user.auth.expection import InvalidToken
 from educa.apps.user.auth.token import AuthBearer
@@ -27,3 +28,4 @@ def on_permission_denied(request, exc):
 
 api.add_router('/course/', course_router, auth=AuthBearer())
 api.add_router('/auth/', auth_router)
+api.add_router('/user/', user_router)

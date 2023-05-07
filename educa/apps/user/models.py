@@ -40,9 +40,9 @@ class User(AbstractUser):
     email = models.EmailField(_('E-mail'), unique=True)
     name = models.CharField(_('Name'), max_length=150)
     username = models.CharField(_('Username'), max_length=150)
-    job_title = models.CharField(max_length=255)
-    locale = models.CharField(max_length=255)
-    bio = models.TextField()
+    job_title = models.CharField(max_length=255, null=True)
+    locale = models.CharField(max_length=255, null=True)
+    bio = models.TextField(null=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name', 'username']

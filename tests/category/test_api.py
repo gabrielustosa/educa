@@ -13,7 +13,12 @@ pytestmark = mark.django_db
 
 
 def test_category_create():
-    payload = {'title': 'test', 'description': 'test', 'slug': 'test'}
+    payload = {
+        'title': 'test',
+        'description': 'test',
+        'slug': 'test',
+        'is_published': True,
+    }
     response = client.post(
         category_url,
         payload,
