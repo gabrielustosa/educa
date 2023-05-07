@@ -5,7 +5,7 @@ from educa.apps.course.sub_apps.category.schema import CategoryOut
 from tests.base import AuthenticatedClient
 from tests.factories.category import CategoryFactory
 
-client = AuthenticatedClient()
+client = AuthenticatedClient(user_options={'is_staff': True})
 
 category_url = reverse_lazy('api-1.0.0:create_category')
 
@@ -15,7 +15,10 @@ pytestmark = mark.django_db
 def test_category_create():
     payload = {'title': 'test', 'description': 'test', 'slug': 'test'}
     response = client.post(
-        category_url, payload, content_type='application/json'
+        category_url,
+        payload,
+        content_type='application/json',
+        user_options={'is_staff': True},
     )
 
     assert response.status_code == 200
@@ -45,7 +48,9 @@ def test_category_list():
 def test_category_delete():
     category = CategoryFactory()
 
-    response = client.delete(f'{category_url}{category.id}')
+    response = client.delete(
+        f'{category_url}{category.id}', user_options={'is_staff': True}
+    )
 
     assert response.status_code == 204
 
@@ -59,6 +64,7 @@ def test_category_update():
         f'{category_url}{category.id}',
         payload,
         content_type='application/json',
+        user_options={'is_staff': True},
     )
 
     assert response.status_code == 200

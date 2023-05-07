@@ -6,10 +6,11 @@ from tests.factories.user import UserFactory
 
 
 class AuthenticatedClient(Client):
-    user: User = None
+    user: User
 
     def _base_environ(self, **request):
-        self.user = UserFactory()
+        user_options = request.pop('user_options', {})
+        self.user = UserFactory(**user_options)
 
         environ = super()._base_environ(**request)
         token = create_jwt_access_token(self.user)

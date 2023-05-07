@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from ninja import Router
 
+from educa.apps.core.permission import is_admin, permission_required
 from educa.apps.course.sub_apps.category.models import Category
 from educa.apps.course.sub_apps.category.schema import CategoryIn, CategoryOut
 
@@ -8,6 +9,7 @@ category_router = Router()
 
 
 @category_router.post('', response=CategoryOut)
+@permission_required([is_admin])
 def create_category(request, data: CategoryIn):
     return Category.objects.create(**data.dict())
 
@@ -23,6 +25,7 @@ def list_categories(request):
 
 
 @category_router.delete('{category_id}', response={204: None})
+@permission_required([is_admin])
 def delete_category(request, category_id: int):
     category = get_object_or_404(Category, id=category_id)
     category.delete()
@@ -30,6 +33,7 @@ def delete_category(request, category_id: int):
 
 
 @category_router.patch('{category_id}', response=CategoryOut)
+@permission_required([is_admin])
 def patch_category(request, category_id: int, data: CategoryIn):
     category = get_object_or_404(Category, id=category_id)
     Category.objects.filter(id=category_id).update(
