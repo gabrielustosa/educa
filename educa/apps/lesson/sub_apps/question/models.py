@@ -29,5 +29,8 @@ class Question(CreatorBase, TimeStampedBase):
     actions = GenericRelation(Action)
     answers = GenericRelation(Answer)
 
+    def get_absolute_url(self):
+        return f'todo/{self.id}'
+
     def __str__(self):
         return f'Question{self.id} - Course({self.course_id})'

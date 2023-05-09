@@ -20,3 +20,6 @@ class Message(CreatorBase, TimeStampedBase):
     title = models.CharField(max_length=255)
     content = models.TextField(validators=[MaxLengthValidator(1000)])
     answers = GenericRelation(Answer)
+
+    def get_absolute_url(self):
+        return f'todo/{self.id}'

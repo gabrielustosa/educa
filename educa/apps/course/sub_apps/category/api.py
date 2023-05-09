@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from ninja import Router
 
-from educa.apps.core.permission import is_admin, permission_required
+from educa.apps.core.permissions import is_admin, permission_required
 from educa.apps.course.sub_apps.category.models import Category
 from educa.apps.course.sub_apps.category.schema import (
     CategoryIn,
