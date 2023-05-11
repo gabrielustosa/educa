@@ -34,13 +34,18 @@ class PermissionObjectBase:
 
 
 def permission_object_required(
-        model: type[Model],
-        id_kwarg: str,
-        permissions: list[type[PermissionObjectBase]],
+    *,
+    model: type[Model],
+    id_kwarg: str = None,
+    permissions: list[type[PermissionObjectBase]],
 ):
     def wrapper(func):
         @wraps(func)
         def inner(request, *args, **kwargs):
+            nonlocal id_kwarg
+            object_name = model._meta.object_name.lower()
+            id_kwarg = id_kwarg if id_kwarg else f'{object_name}_id'
+
             permissions_init = [
                 permission(request, func, id_kwarg, *args, **kwargs)
                 for permission in permissions
@@ -49,6 +54,7 @@ def permission_object_required(
             query = model.objects.filter(id=kwargs[id_kwarg])
             for permission in permissions_init:
                 query = permission.compose_query(query)
+
             obj = query.first()
             if obj is None:
                 raise Http404(
@@ -57,8 +63,7 @@ def permission_object_required(
 
             [permission.check(obj) for permission in permissions_init]
 
-            object_name = model._meta.object_name.lower()
-            kwargs.update({object_name: obj})
+            setattr(request, 'get_object', lambda: obj)
             return func(request, *args, **kwargs)
 
         return inner
