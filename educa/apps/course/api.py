@@ -91,8 +91,9 @@ def update_course(request, course_id: int, data: CourseUpdate):
         course.instructors.clear()
         course.instructors.add(*instructors)
 
-    Course.objects.filter(id=course_id).update(
-        **data.dict(exclude_unset=True, exclude={'categories', 'instructors'})
-    )
-    course.refresh_from_db()
+    for key, value in data.dict(
+        exclude_unset=True, exclude={'categories', 'instructors'}
+    ).items():
+        setattr(course, key, value)
+    course.save()
     return course
