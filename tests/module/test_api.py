@@ -1,6 +1,5 @@
 import pytest
 from django.urls import reverse_lazy
-from pytest_django.asserts import assertNumQueries
 
 from educa.apps.module.models import Module
 from educa.apps.module.schema import ModuleOut
@@ -34,7 +33,9 @@ def test_create_module():
     )
 
     assert response.status_code == 200
-    assert response.json() == {'id': 1, **payload}
+    assert response.json() == ModuleOut.from_orm(
+        Module.objects.get(id=response.json()['id'])
+    )
     assert Module.objects.filter(id=response.json()['id']).exists()
 
 

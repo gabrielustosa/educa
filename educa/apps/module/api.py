@@ -5,7 +5,6 @@ from ninja import Query, Router
 from educa.apps.core.permissions import (
     is_course_instructor,
     permission_object_required,
-    permission_required,
 )
 from educa.apps.course.models import Course
 from educa.apps.module.models import Module
@@ -37,12 +36,7 @@ def get_module(request, module_id: int):
 
 @module_router.get('', response=list[ModuleOut])
 def list_modules(request, filters: ModuleFilter = Query(...)):
-    query = Module.objects.all()
-    if filters.course_id is not None:
-        query = query.filter(course_id=filters.course_id)
-    elif filters.title is not None:
-        query = query.filter(title__icontains=filters.title)
-    return query
+    return filters.filter(Module.objects.all())
 
 
 @module_router.delete('{int:module_id}', response={204: None})

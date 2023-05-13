@@ -1,4 +1,5 @@
-from ninja import Schema
+from ninja import FilterSchema, Schema
+from pydantic import Field, validator
 
 
 class CourseIn(Schema):
@@ -36,10 +37,14 @@ class CourseOut(Schema):
         return [instructor.id for instructor in obj.instructors.all()]
 
 
-class CourseFilter(Schema):
-    categories: str | None
-    language: str | None
-    level: str | None
+class CourseFilter(FilterSchema):
+    categories: str | None = Field(q='categories__in')
+    language: str | None = Field(q='language__in')
+    level: str | None = Field(q='level__in')
+
+    @validator('categories', 'language', 'level', allow_reuse=True)
+    def split_testing(cls, value):
+        return value.split(',')
 
 
 class CourseUpdate(Schema):

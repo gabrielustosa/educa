@@ -1,4 +1,5 @@
-from ninja import Schema
+from ninja import FilterSchema, Schema
+from pydantic import Field
 
 
 class ModuleIn(Schema):
@@ -23,6 +24,6 @@ class ModuleUpdate(Schema):
     is_published: bool | None
 
 
-class ModuleFilter(Schema):
+class ModuleFilter(FilterSchema):
     course_id: int | None
-    title: str | None
+    title: str | None = Field(q='title__icontains')

@@ -56,12 +56,7 @@ def get_course(request, course_id: int):
 
 @course_router.get('', response=list[CourseOut])
 def list_course(request, filters: CourseFilter = Query(...)):
-    filter_values = {
-        f'{k}__in': v.split(',')
-        for k, v in filters.dict().items()
-        if v is not None
-    }
-    return Course.objects.filter(**filter_values).distinct()
+    return filters.filter(Course.objects.all()).distinct()
 
 
 @course_router.delete('{int:course_id}', response={204: None})
