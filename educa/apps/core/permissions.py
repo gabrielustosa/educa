@@ -20,9 +20,10 @@ def permission_required(permissions: list[Callable]):
 
 
 class PermissionObjectBase:
-    def __init__(self, request, endpoint, *args, **kwargs):
+    def __init__(self, request, endpoint, many, *args, **kwargs):
         self.request = request
         self.endpoint = endpoint
+        self.many = many
         self.args = args
         self.kwargs = kwargs
 
@@ -38,6 +39,7 @@ def permission_object_required(
     model: type[Model],
     id_kwarg: str = None,
     permissions: list[type[PermissionObjectBase]],
+    many: bool = False,
 ):
     def wrapper(func):
         @wraps(func)
@@ -47,21 +49,27 @@ def permission_object_required(
             id_kwarg = id_kwarg if id_kwarg else f'{object_name}_id'
 
             permissions_init = [
-                permission(request, func, id_kwarg, *args, **kwargs)
+                permission(request, func, many, id_kwarg, *args, **kwargs)
                 for permission in permissions
             ]
 
-            query = model.objects.filter(id=kwargs[id_kwarg])
+            query = (
+                model.objects.all()
+                if many
+                else model.objects.filter(id=kwargs[id_kwarg])
+            )
             for permission in permissions_init:
                 query = permission.compose_query(query)
 
-            obj = query.first()
-            if obj is None:
-                raise Http404(
-                    'No %s matches the given query.' % model._meta.object_name
-                )
-
-            [permission.check(obj) for permission in permissions_init]
+            if not many:
+                obj = query.first()
+                if obj is None:
+                    raise Http404(
+                        'No %s matches the given query.' % object_name
+                    )
+                [permission.check(obj) for permission in permissions_init]
+            else:
+                obj = query
 
             setattr(request, 'get_object', lambda: obj)
             return func(request, *args, **kwargs)
@@ -78,13 +86,16 @@ def is_admin(request, *args, **kwargs):
 
 class is_course_instructor(PermissionObjectBase):
     def compose_query(self, query):
-        return query.annotate(
+        query = query.annotate(
             user_is_instructor=Exists(
                 self.request.user.instructors_courses.filter(
                     id=OuterRef('course_id')
                 )
             )
         )
+        if self.many:
+            query = query.filter(user_is_instructor=True)
+        return query
 
     def check(self, obj):
         is_instructor = getattr(obj, 'user_is_instructor', False)
@@ -92,18 +103,21 @@ class is_course_instructor(PermissionObjectBase):
             raise PermissionDenied
 
 
-class is_course_student(PermissionObjectBase):
+class is_enrolled(PermissionObjectBase):
     def compose_query(self, query):
-        return query.annotate(
-            user_is_enroled=Exists(
+        query = query.annotate(
+            user_is_enrolled=Exists(
                 self.request.user.enrolled_courses.filter(
                     id=OuterRef('course_id')
                 )
             )
         )
+        if self.many:
+            query = query.filter(user_is_enrolled=True)
+        return query
 
     def check(self, obj):
-        is_student = getattr(obj, 'user_is_student', False)
+        is_student = getattr(obj, 'user_is_enrolled', False)
         if not is_student:
             raise PermissionDenied
 
