@@ -40,6 +40,43 @@ def test_create_lesson():
     )
 
 
+def test_create_lesson_with_invalid_course_id():
+    module = ModuleFactory()
+    payload = {
+        'title': 'test',
+        'description': 'description',
+        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
+        'module_id': module.id,
+        'course_id': 1014104,
+    }
+
+    response = client.post(
+        lesson_url,
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
+def test_create_lesson_with_invalid_module_id():
+    payload = {
+        'title': 'test',
+        'description': 'description',
+        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
+        'module_id': 45104,
+        'course_id': CourseFactory().id,
+    }
+
+    response = client.post(
+        lesson_url,
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
 def test_create_lesson_user_not_is_instructor():
     module = ModuleFactory()
     payload = {
@@ -70,6 +107,12 @@ def test_get_lesson():
 
     assert response.status_code == 200
     assert response.json() == LessonOut.from_orm(lesson)
+
+
+def test_get_lesson_that_do_not_exists():
+    response = client.get(f'{lesson_url}405610')
+
+    assert response.status_code == 404
 
 
 def test_get_lesson_user_is_not_enrolled():
@@ -169,6 +212,12 @@ def test_delete_lesson():
     assert not Lesson.objects.filter(id=lesson.id).exists()
 
 
+def test_delete_lesson_that_do_not_exists():
+    response = client.delete(f'{lesson_url}15014')
+
+    assert response.status_code == 404
+
+
 def test_delete_lesson_user_is_not_instructor():
     lesson = LessonFactory()
 
@@ -193,6 +242,18 @@ def test_update_lesson():
     assert response.status_code == 200
     lesson.refresh_from_db()
     assert lesson.title == payload['title']
+
+
+def test_update_lesson_that_do_not_exists():
+    payload = {'title': 'new title'}
+
+    response = client.patch(
+        f'{lesson_url}10566',
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
 
 
 def test_update_lesson_user_is_not_instructor():

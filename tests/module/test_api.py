@@ -39,6 +39,23 @@ def test_create_module():
     assert Module.objects.filter(id=response.json()['id']).exists()
 
 
+def test_create_module_with_invalid_course_id():
+    payload = {
+        'title': 'test title',
+        'description': 'test description',
+        'course_id': 45641614410,
+        'is_published': True,
+    }
+
+    response = client.post(
+        module_url,
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
 def test_create_module_user_is_not_course_instructor():
     course = CourseFactory()
     payload = {
@@ -64,6 +81,12 @@ def test_get_module():
 
     assert response.status_code == 200
     assert response.json() == ModuleOut.from_orm(module)
+
+
+def test_get_module_that_do_not_exists():
+    response = client.get(f'{module_url}40564156056')
+
+    assert response.status_code == 404
 
 
 def test_list_module():
@@ -114,6 +137,12 @@ def test_module_delete():
 
     assert response.status_code == 204
     assert not Module.objects.filter(id=module.id).exists()
+
+
+def test_delete_module_that_do_not_exists():
+    response = client.delete(f'{module_url}45140104')
+
+    assert response.status_code == 404
 
 
 def test_module_delete_user_is_not_instructor():

@@ -76,6 +76,12 @@ def test_get_course():
     assert response.json() == CourseOut.from_orm(course)
 
 
+def test_get_course_that_do_not_exists():
+    response = client.get(f'{course_url}56414156110')
+
+    assert response.status_code == 404
+
+
 def test_list_course():
     courses = CourseFactory.create_batch(10)
 
@@ -135,6 +141,12 @@ def test_delete_course():
     assert not Course.objects.filter(id=course.id).exists()
 
 
+def test_delete_course_that_do_not_exists():
+    response = client.delete(f'{course_url}15161450')
+
+    assert response.status_code == 404
+
+
 def test_delete_course_user_is_not_instructor():
     course = CourseFactory()
 
@@ -163,6 +175,18 @@ def test_update_course():
         'title': 'new title',
         'description': 'new description',
     }
+
+
+def test_update_course_that_do_not_exists():
+    payload = {'title': 'new title', 'description': 'new description'}
+
+    response = client.patch(
+        f'{course_url}561465160',
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
 
 
 def test_update_course_user_is_not_instructor():
