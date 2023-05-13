@@ -1,5 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from ordered_model.models import OrderedModel
+from pytube import YouTube
+from pytube.exceptions import RegexMatchError
 
 from educa.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
 from educa.apps.course.models import Course
@@ -15,7 +18,7 @@ class Lesson(ContentBase, OrderedModel):
     """
 
     video = models.URLField()
-    video_duration = models.FloatField(null=True)
+    video_duration_in_seconds = models.IntegerField(null=True)
     module = models.ForeignKey(
         Module,
         related_name='lessons',
@@ -27,7 +30,15 @@ class Lesson(ContentBase, OrderedModel):
         on_delete=models.CASCADE,
     )
 
-    order_with_respect_to = ('course', 'module')
+    order_with_respect_to = 'course'
+
+    def save(self, *args, **kwargs):
+        try:
+            video = YouTube(self.video)
+            self.video_duration_in_seconds = video.length
+        except (TypeError, RegexMatchError):
+            raise ValidationError('invalid youtube video')
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['order']
