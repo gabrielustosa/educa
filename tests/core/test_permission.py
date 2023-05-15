@@ -1,15 +1,8 @@
-import pytest
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from pytest import raises
 
-from educa.apps.core.permissions import (  # permission_object_required,
-    is_admin,
-    is_course_instructor,
-    permission_required,
-)
-from tests.factories.course import CourseFactory
-from tests.factories.user import UserFactory
+from educa.apps.core.permissions import is_admin, permission_required
 
 
 def foo_permission(request, *args, **kwargs):

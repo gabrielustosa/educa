@@ -4,6 +4,7 @@ from typing import Callable
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, Model, OuterRef
 from django.http import Http404
+from ninja import FilterSchema, Schema
 
 
 def permission_required(permissions: list[Callable]):
@@ -34,6 +35,13 @@ class PermissionObjectBase:
         pass
 
 
+def _get_data_from_endpoint(kwargs):
+    for value in kwargs.values():
+        klass = value.__class__
+        if issubclass(klass, Schema) and not issubclass(klass, FilterSchema):
+            return value
+
+
 def permission_object_required(
     *,
     model: type[Model],
@@ -53,11 +61,15 @@ def permission_object_required(
                 for permission in permissions
             ]
 
-            query = (
-                model.objects.all()
-                if many
-                else model.objects.filter(id=kwargs[id_kwarg])
-            )
+            if many:
+                query = model.objects.all()
+            else:
+                object_id = kwargs.get(id_kwarg)
+                if object_id is None:
+                    data = _get_data_from_endpoint(kwargs)
+                    object_id = getattr(data, id_kwarg)
+                query = model.objects.filter(id=object_id)
+
             for permission in permissions_init:
                 query = permission.compose_query(query)
 
