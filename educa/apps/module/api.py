@@ -42,7 +42,7 @@ def list_modules(request, filters: ModuleFilter = Query(...)):
 @module_router.delete('{int:module_id}', response={204: None})
 @permission_object_required(model=Module, permissions=[is_course_instructor])
 def delete_module(request, module_id: int):
-    module = request.get_object()
+    module = request.get_module()
     module.delete()
     return 204, None
 
@@ -50,7 +50,7 @@ def delete_module(request, module_id: int):
 @module_router.patch('{int:module_id}', response=ModuleOut)
 @permission_object_required(model=Module, permissions=[is_course_instructor])
 def update_module(request, module_id: int, data: ModuleUpdate):
-    module = request.get_object()
+    module = request.get_module()
     for key, value in data.dict(exclude_unset=True).items():
         setattr(module, key, value)
     module.save()

@@ -34,20 +34,20 @@ def create_lesson(request, data: LessonIn):
 @lesson_router.get('{int:lesson_id}', response=LessonOut)
 @permission_object_required(model=Lesson, permissions=[is_enrolled])
 def get_lesson(request, lesson_id: int):
-    return request.get_object()
+    return request.get_lesson()
 
 
 @lesson_router.get('', response=list[LessonOut])
 @permission_object_required(model=Lesson, permissions=[is_enrolled], many=True)
 def list_lessons(request, filters: LessonFilter = Query(...)):
-    query = request.get_object()
+    query = request.get_query()
     return filters.filter(query)
 
 
 @lesson_router.delete('{int:lesson_id}', response={204: None})
 @permission_object_required(model=Lesson, permissions=[is_course_instructor])
 def delete_lesson(request, lesson_id: int):
-    lesson = request.get_object()
+    lesson = request.get_lesson()
     lesson.delete()
     return 204, None
 
@@ -55,7 +55,7 @@ def delete_lesson(request, lesson_id: int):
 @lesson_router.patch('{int:lesson_id}', response=LessonOut)
 @permission_object_required(model=Lesson, permissions=[is_course_instructor])
 def update_lesson(request, lesson_id: int, data: LessonOptional):
-    lesson = request.get_object()
+    lesson = request.get_lesson()
     for key, value in data.dict(exclude_unset=True).items():
         setattr(lesson, key, value)
     lesson.save()
