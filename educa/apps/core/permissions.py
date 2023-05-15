@@ -6,6 +6,8 @@ from django.db.models import Exists, Model, OuterRef
 from django.http import Http404
 from ninja import FilterSchema, Schema
 
+from educa.apps.course.models import Course
+
 
 def permission_required(permissions: list[Callable]):
     def wrapper(func):
@@ -21,10 +23,11 @@ def permission_required(permissions: list[Callable]):
 
 
 class PermissionObjectBase:
-    def __init__(self, request, endpoint, many, *args, **kwargs):
+    def __init__(self, request, endpoint, many, model, *args, **kwargs):
         self.request = request
         self.endpoint = endpoint
         self.many = many
+        self.model = model
         self.args = args
         self.kwargs = kwargs
 
@@ -57,7 +60,9 @@ def permission_object_required(
             id_kwarg = id_kwarg if id_kwarg else f'{object_name}_id'
 
             permissions_init = [
-                permission(request, func, many, id_kwarg, *args, **kwargs)
+                permission(
+                    request, func, many, model, id_kwarg, *args, **kwargs
+                )
                 for permission in permissions
             ]
 
@@ -67,7 +72,10 @@ def permission_object_required(
                 object_id = kwargs.get(id_kwarg)
                 if object_id is None:
                     data = _get_data_from_endpoint(kwargs)
-                    object_id = getattr(data, id_kwarg)
+                    object_id = getattr(data, id_kwarg, None)
+                    if object_id is None:
+                        return func(request, *args, **kwargs)
+
                 query = model.objects.filter(id=object_id)
 
             for permission in permissions_init:
@@ -98,10 +106,11 @@ def is_admin(request, *args, **kwargs):
 
 class is_course_instructor(PermissionObjectBase):
     def compose_query(self, query):
+        ref_name = 'id' if self.model == Course else 'course_id'
         query = query.annotate(
             user_is_instructor=Exists(
                 self.request.user.instructors_courses.filter(
-                    id=OuterRef('course_id')
+                    id=OuterRef(ref_name)
                 )
             )
         )
@@ -117,10 +126,11 @@ class is_course_instructor(PermissionObjectBase):
 
 class is_enrolled(PermissionObjectBase):
     def compose_query(self, query):
+        ref_name = 'id' if self.model == Course else 'course_id'
         query = query.annotate(
             user_is_enrolled=Exists(
                 self.request.user.enrolled_courses.filter(
-                    id=OuterRef('course_id')
+                    id=OuterRef(ref_name)
                 )
             )
         )

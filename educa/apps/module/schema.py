@@ -20,7 +20,6 @@ class ModuleOut(Schema):
 class ModuleUpdate(Schema):
     title: str | None
     description: str | None
-    course_id: int | None
     is_published: bool | None
 
 

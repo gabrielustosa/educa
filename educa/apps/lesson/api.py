@@ -1,5 +1,3 @@
-from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
 from ninja import Query, Router
 
 from educa.apps.core.permissions import (
@@ -12,8 +10,8 @@ from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.schema import (
     LessonFilter,
     LessonIn,
-    LessonOptional,
     LessonOut,
+    LessonUpdate,
 )
 from educa.apps.module.models import Module
 
@@ -21,13 +19,9 @@ lesson_router = Router()
 
 
 @lesson_router.post('', response=LessonOut)
+@permission_object_required(model=Module, permissions=[is_course_instructor])
+@permission_object_required(model=Course, permissions=[is_course_instructor])
 def create_lesson(request, data: LessonIn):
-    get_object_or_404(Course, id=data.course_id)
-    get_object_or_404(Module, id=data.module_id)
-
-    if not request.user.instructors_courses.filter(id=data.course_id).exists():
-        raise PermissionDenied
-
     return Lesson.objects.create(**data.dict())
 
 
@@ -54,7 +48,8 @@ def delete_lesson(request, lesson_id: int):
 
 @lesson_router.patch('{int:lesson_id}', response=LessonOut)
 @permission_object_required(model=Lesson, permissions=[is_course_instructor])
-def update_lesson(request, lesson_id: int, data: LessonOptional):
+@permission_object_required(model=Module, permissions=[is_course_instructor])
+def update_lesson(request, lesson_id: int, data: LessonUpdate):
     lesson = request.get_lesson()
     for key, value in data.dict(exclude_unset=True).items():
         setattr(lesson, key, value)

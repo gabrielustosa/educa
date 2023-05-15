@@ -1,4 +1,3 @@
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from ninja import Query, Router
 
@@ -19,19 +18,14 @@ module_router = Router()
 
 
 @module_router.post('', response=ModuleOut)
+@permission_object_required(model=Course, permissions=[is_course_instructor])
 def create_module(request, data: ModuleIn):
-    course = get_object_or_404(Course, id=data.course_id)
-
-    if not course.instructors.filter(id=request.user.id):
-        raise PermissionDenied
-
     return Module.objects.create(**data.dict())
 
 
 @module_router.get('{int:module_id}', response=ModuleOut)
 def get_module(request, module_id: int):
-    module = get_object_or_404(Module, id=module_id)
-    return module
+    return get_object_or_404(Module, id=module_id)
 
 
 @module_router.get('', response=list[ModuleOut])

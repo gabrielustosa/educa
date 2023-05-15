@@ -42,6 +42,8 @@ def test_create_lesson():
 
 def test_create_lesson_with_invalid_course_id():
     module = ModuleFactory()
+    user = UserFactory()
+    module.course.instructors.add(user)
     payload = {
         'title': 'test',
         'description': 'description',
@@ -54,6 +56,7 @@ def test_create_lesson_with_invalid_course_id():
         lesson_url,
         payload,
         content_type='application/json',
+        user_options={'existing': user},
     )
 
     assert response.status_code == 404
@@ -91,6 +94,29 @@ def test_create_lesson_user_not_is_instructor():
         lesson_url,
         payload,
         content_type='application/json',
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_lesson_user_not_is_instructor_course_module():
+    user = UserFactory()
+    course = CourseFactory()
+    course.instructors.add(user)
+    module = ModuleFactory()
+    payload = {
+        'title': 'test',
+        'description': 'description',
+        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
+        'module_id': module.id,
+        'course_id': course.id,
+    }
+
+    response = client.post(
+        lesson_url,
+        payload,
+        content_type='application/json',
+        user_options={'existing': user},
     )
 
     assert response.status_code == 403
@@ -263,6 +289,23 @@ def test_update_lesson_user_is_not_instructor():
     response = client.patch(
         f'{lesson_url}{lesson.id}',
         payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 403
+
+
+def test_update_lesson_user_is_not_module_instructor():
+    lesson = LessonFactory()
+    user = UserFactory()
+    user.instructors_courses.add(lesson.course)
+    module = ModuleFactory()
+    payload = {'module_id': module.id}
+
+    response = client.patch(
+        f'{lesson_url}{lesson.id}',
+        payload,
+        user_options={'existing': user},
         content_type='application/json',
     )
 

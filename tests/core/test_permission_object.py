@@ -101,6 +101,37 @@ def test_permission_object_required_id_kwarg_in_data():
     assert request.get_course() == course
 
 
+def test_permission_object_required_id_kwarg_in_data_denied():
+    request = HttpRequest()
+    user = UserFactory()
+    course = CourseFactory()
+    data_schema = CourseSchema(course_id=course.id)
+    setattr(request, 'user', user)
+
+    with pytest.raises(PermissionDenied):
+        foo_data_view(request, course=data_schema)
+
+
+class CourseSchemaEmpty(Schema):
+    pass
+
+
+@permission_object_required(model=Course, permissions=[foo_permission])
+def foo_data_empty_view(request, course: CourseSchemaEmpty):
+    return {'success': True}
+
+
+def test_permission_object_required_id_kwarg_not_in_data():
+    request = HttpRequest()
+    user = UserFactory()
+    data_schema = CourseSchemaEmpty()
+    setattr(request, 'user', user)
+
+    result = foo_data_empty_view(request, course=data_schema)
+
+    assert result == {'success': True}
+
+
 @permission_object_required(
     model=Course, permissions=[foo_permission], many=True
 )

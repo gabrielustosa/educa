@@ -32,10 +32,9 @@ class LessonFilter(FilterSchema):
         return value.split(',')
 
 
-class LessonOptional(Schema):
+class LessonUpdate(Schema):
     title: str | None
     description: str | None
     video: str | None
     module_id: int | None
-    course_id: int | None
     is_published: bool | None
