@@ -1,10 +1,15 @@
 from django.shortcuts import get_object_or_404
-from ninja import Query, Router
+from ninja import Query, Router, Schema
 from ninja.errors import HttpError
 
 from educa.apps.core.permissions import (
     is_course_instructor,
     permission_object_required,
+)
+from educa.apps.core.schema import (
+    NotAuthenticated,
+    NotFound,
+    PermissionDeniedInstructor,
 )
 from educa.apps.course.models import Course
 from educa.apps.course.schema import (
@@ -16,6 +21,7 @@ from educa.apps.course.schema import (
 from educa.apps.course.sub_apps.category.api import category_router
 from educa.apps.course.sub_apps.category.models import Category
 from educa.apps.course.sub_apps.rating.api import rating_router
+from educa.apps.user.auth.token import AuthBearer
 from educa.apps.user.models import User
 
 course_router = Router()
@@ -40,7 +46,22 @@ def _validate_instructors_and_categories(data):
     return categories, instructors
 
 
-@course_router.post('', response=CourseOut)
+class InvalidCategoriesOrInstructors(Schema):
+    detail: str = 'invalid instructors or categories'
+
+
+@course_router.post(
+    '',
+    tags=['Curso'],
+    summary='Cria um curso',
+    description='Endpoint para a criação de um novo curso.',
+    response={
+        200: CourseOut,
+        400: InvalidCategoriesOrInstructors,
+        401: NotAuthenticated,
+    },
+    auth=AuthBearer(),
+)
 def create_course(request, data: CourseIn):
     course_data = data.dict()
 
@@ -52,17 +73,44 @@ def create_course(request, data: CourseIn):
     return course
 
 
-@course_router.get('{int:course_id}', response=CourseOut)
+@course_router.get(
+    '{int:course_id}',
+    tags=['Curso'],
+    summary='Retorna um curso',
+    description='Endpoint que retorna um curso em específico.',
+    response={
+        200: CourseOut,
+        404: NotFound,
+    },
+)
 def get_course(request, course_id: int):
     return get_object_or_404(Course, id=course_id)
 
 
-@course_router.get('', response=list[CourseOut])
+@course_router.get(
+    '',
+    response=list[CourseOut],
+    tags=['Curso'],
+    summary='Lista todos os cursos',
+    description='Endpoint que retorna uma lista de todos os cursos disponíveis. Os filtros devem ser passados separados por virgulas caso haja mais de um valor.',
+)
 def list_course(request, filters: CourseFilter = Query(...)):
     return filters.filter(Course.objects.all()).distinct()
 
 
-@course_router.delete('{int:course_id}', response={204: None})
+@course_router.delete(
+    '{int:course_id}',
+    tags=['Curso'],
+    summary='Deletar um curso',
+    description='Endpoint para deletar um curso.',
+    auth=AuthBearer(),
+    response={
+        204: None,
+        401: NotAuthenticated,
+        404: NotFound,
+        403: PermissionDeniedInstructor,
+    },
+)
 @permission_object_required(model=Course, permissions=[is_course_instructor])
 def delete_course(request, course_id: int):
     course = request.get_course()
@@ -70,7 +118,19 @@ def delete_course(request, course_id: int):
     return 204, None
 
 
-@course_router.patch('{int:course_id}', response=CourseOut)
+@course_router.patch(
+    '{int:course_id}',
+    tags=['Curso'],
+    summary='Atualizar um curso',
+    description='Endpoint para atualizar um curso existente.',
+    auth=AuthBearer(),
+    response={
+        200: CourseOut,
+        401: NotAuthenticated,
+        404: NotFound,
+        403: PermissionDeniedInstructor,
+    },
+)
 @permission_object_required(model=Course, permissions=[is_course_instructor])
 def update_course(request, course_id: int, data: CourseUpdate):
     course = request.get_course()

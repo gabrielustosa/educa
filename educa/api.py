@@ -7,9 +7,8 @@ from educa.apps.module.api import module_router
 from educa.apps.user.api import user_router
 from educa.apps.user.auth.api import auth_router
 from educa.apps.user.auth.expection import InvalidToken
-from educa.apps.user.auth.token import AuthBearer
 
-api = NinjaAPI()
+api = NinjaAPI(title='Educa')
 
 
 @api.exception_handler(InvalidToken)
@@ -37,8 +36,8 @@ def on_validation_error(request, exc):
     )
 
 
-api.add_router('/course/', course_router, auth=AuthBearer())
-api.add_router('/course/module/', module_router, auth=AuthBearer())
-api.add_router('/course/lesson/', lesson_router, auth=AuthBearer())
+api.add_router('/course/', course_router)
+api.add_router('/course/module/', module_router)
+api.add_router('/course/lesson/', lesson_router)
 api.add_router('/auth/', auth_router)
 api.add_router('/user/', user_router)
