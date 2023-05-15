@@ -1,8 +1,11 @@
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from ninja import Query, Router
 from ninja.errors import HttpError
 
+from educa.apps.core.permissions import (
+    is_course_instructor,
+    permission_object_required,
+)
 from educa.apps.course.models import Course
 from educa.apps.course.schema import (
     CourseFilter,
@@ -60,22 +63,17 @@ def list_course(request, filters: CourseFilter = Query(...)):
 
 
 @course_router.delete('{int:course_id}', response={204: None})
+@permission_object_required(model=Course, permissions=[is_course_instructor])
 def delete_course(request, course_id: int):
-    course = get_object_or_404(Course, id=course_id)
-
-    if not course.instructors.filter(id=request.user.id).exists():
-        raise PermissionDenied
-
+    course = request.get_course()
     course.delete()
     return 204, None
 
 
 @course_router.patch('{int:course_id}', response=CourseOut)
+@permission_object_required(model=Course, permissions=[is_course_instructor])
 def update_course(request, course_id: int, data: CourseUpdate):
-    course = get_object_or_404(Course, id=course_id)
-
-    if not course.instructors.filter(id=request.user.id).exists():
-        raise PermissionDenied
+    course = request.get_course()
 
     categories, instructors = _validate_instructors_and_categories(data.dict())
     if categories is not None:
