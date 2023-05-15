@@ -58,5 +58,9 @@ def update_lesson(request, lesson_id: int, data: LessonOptional):
     lesson = request.get_lesson()
     for key, value in data.dict(exclude_unset=True).items():
         setattr(lesson, key, value)
+
+    if getattr(data, 'video', None) is not None:
+        lesson.video_duration_in_seconds = None
+
     lesson.save()
     return lesson

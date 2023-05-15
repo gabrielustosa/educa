@@ -5,6 +5,7 @@ from pytube import YouTube
 from pytube.exceptions import RegexMatchError
 
 from educa.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
+from educa.apps.core.video import get_video_length
 from educa.apps.course.models import Course
 from educa.apps.module.models import Module
 
@@ -33,11 +34,8 @@ class Lesson(ContentBase, OrderedModel):
     order_with_respect_to = 'course'
 
     def save(self, *args, **kwargs):
-        try:
-            video = YouTube(self.video)
-            self.video_duration_in_seconds = video.length
-        except (TypeError, RegexMatchError):
-            raise ValidationError('invalid youtube video')
+        if self.video_duration_in_seconds is None:
+            self.video_duration_in_seconds = get_video_length(self.video)
         super().save(*args, **kwargs)
 
     class Meta:

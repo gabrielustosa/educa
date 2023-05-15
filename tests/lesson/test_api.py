@@ -267,3 +267,21 @@ def test_update_lesson_user_is_not_instructor():
     )
 
     assert response.status_code == 403
+
+
+def test_update_lesson_video():
+    lesson = LessonFactory()
+    user = UserFactory()
+    user.instructors_courses.add(lesson.course)
+    payload = {'video': 'https://www.youtube.com/watch?v=jc36BlAEWlQ'}
+
+    response = client.patch(
+        f'{lesson_url}{lesson.id}',
+        payload,
+        user_options={'existing': user},
+        content_type='application/json',
+    )
+
+    assert response.status_code == 200
+    assert response.json()['video'] == payload['video']
+    assert response.json()['video_duration_in_seconds'] == 304
