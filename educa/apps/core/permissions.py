@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Callable
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import Exists, Model, OuterRef
+from django.db.models import Exists, Model, OuterRef, Q
 from django.http import Http404
 from ninja import FilterSchema, Schema
 
@@ -105,7 +105,7 @@ def is_admin(request, *args, **kwargs):
 
 
 class is_course_instructor(PermissionObjectBase):
-    def compose_query(self, query):
+    def annotate(self, query):
         ref_name = 'id' if self.model == Course else 'course_id'
         query = query.annotate(
             user_is_instructor=Exists(
@@ -114,6 +114,10 @@ class is_course_instructor(PermissionObjectBase):
                 )
             )
         )
+        return query
+
+    def compose_query(self, query):
+        query = self.annotate(query)
         if self.many:
             query = query.filter(user_is_instructor=True)
         return query
@@ -124,9 +128,10 @@ class is_course_instructor(PermissionObjectBase):
             raise PermissionDenied
 
 
-class is_enrolled(PermissionObjectBase):
+class is_enrolled(is_course_instructor):
     def compose_query(self, query):
         ref_name = 'id' if self.model == Course else 'course_id'
+        query = self.annotate(query)
         query = query.annotate(
             user_is_enrolled=Exists(
                 self.request.user.enrolled_courses.filter(
@@ -135,12 +140,15 @@ class is_enrolled(PermissionObjectBase):
             )
         )
         if self.many:
-            query = query.filter(user_is_enrolled=True)
+            query = query.filter(
+                Q(user_is_enrolled=True) | Q(user_is_instructor=True)
+            )
         return query
 
     def check(self, obj):
         is_student = getattr(obj, 'user_is_enrolled', False)
-        if not is_student:
+        is_instructor = getattr(obj, 'user_is_instructor', False)
+        if not is_student and not is_instructor:
             raise PermissionDenied
 
 
