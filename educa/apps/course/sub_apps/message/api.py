@@ -72,7 +72,7 @@ def get_message(request, message_id: int):
     model=Message, permissions=[is_enrolled], many=True
 )
 def list_messages(request, filters: MessageFilter = Query(...)):
-    query = request.get_query()
+    query = request.get_message_query()
     return filters.filter(query)
 
 

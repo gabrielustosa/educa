@@ -149,8 +149,10 @@ def test_permission_object_required_many():
     result = foo_many_view(request)
 
     assert result == {'success': True}
-    assert hasattr(request, 'get_query')
-    TestCase().assertQuerySetEqual(request.get_query(), Course.objects.all())
+    assert hasattr(request, 'get_course_query')
+    TestCase().assertQuerySetEqual(
+        request.get_course_query(), Course.objects.all()
+    )
 
 
 @permission_object_required(model=Module, permissions=[is_course_instructor])

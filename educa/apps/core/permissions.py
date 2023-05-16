@@ -90,7 +90,7 @@ def permission_object_required(
                 [permission.check(obj) for permission in permissions_init]
                 setattr(request, f'get_{object_name}', lambda: obj)
             else:
-                setattr(request, 'get_query', lambda: query)
+                setattr(request, f'get_{object_name}_query', lambda: query)
 
             return func(request, *args, **kwargs)
 

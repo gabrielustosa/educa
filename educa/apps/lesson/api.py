@@ -73,7 +73,7 @@ def get_lesson(request, lesson_id: int):
 )
 @permission_object_required(model=Lesson, permissions=[is_enrolled], many=True)
 def list_lessons(request, filters: LessonFilter = Query(...)):
-    query = request.get_query()
+    query = request.get_lesson_query()
     return filters.filter(query)
 
 
