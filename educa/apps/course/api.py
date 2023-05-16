@@ -20,6 +20,7 @@ from educa.apps.course.schema import (
 )
 from educa.apps.course.sub_apps.category.api import category_router
 from educa.apps.course.sub_apps.category.models import Category
+from educa.apps.course.sub_apps.message.api import message_router
 from educa.apps.course.sub_apps.rating.api import rating_router
 from educa.apps.user.auth.token import AuthBearer
 from educa.apps.user.models import User
@@ -27,6 +28,7 @@ from educa.apps.user.models import User
 course_router = Router()
 course_router.add_router('/rating/', rating_router)
 course_router.add_router('/category/', category_router)
+course_router.add_router('/message/', message_router)
 
 
 def _validate_instructors_and_categories(data):

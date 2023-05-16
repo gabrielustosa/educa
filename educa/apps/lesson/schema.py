@@ -28,7 +28,7 @@ class LessonFilter(FilterSchema):
     title: str | None = Field(q='title__icontains')
 
     @validator('course_id', 'module_id', allow_reuse=True)
-    def split_testing(cls, value):
+    def split_string(cls, value):
         return value.split(',')
 
 

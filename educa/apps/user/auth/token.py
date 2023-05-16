@@ -8,7 +8,7 @@ from ninja.security import HttpBearer
 from educa.apps.user.auth.expection import InvalidToken
 from educa.apps.user.models import User
 
-TOKEN_EXPIRATION_DELTA = timedelta(days=7)
+TOKEN_EXPIRATION_DELTA = timedelta(days=30)
 ALGORITHM = 'HS256'
 
 
