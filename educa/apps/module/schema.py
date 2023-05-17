@@ -15,6 +15,7 @@ class ModuleOut(Schema):
     id: int
     title: str
     description: str
+    order: int
     course_id: int
     is_published: bool
     created: datetime

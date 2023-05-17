@@ -19,6 +19,7 @@ class LessonOut(Schema):
     description: str
     video: str
     video_duration_in_seconds: int
+    order: int
     module_id: int
     course_id: int
     is_published: bool
