@@ -1,4 +1,5 @@
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError
 from ninja import NinjaAPI
 
 from educa.apps.course.api import course_router
@@ -33,6 +34,21 @@ def on_validation_error(request, exc):
         request,
         data={'detail': exc.message},
         status=400,
+    )
+
+
+@api.exception_handler(IntegrityError)
+def on_integrity_error(request, exc):
+    if 'duplicate key value' in exc.args[0]:
+        return api.create_response(
+            request,
+            data={'detail': 'duplicated object.'},
+            status=400,
+        )
+    return api.create_response(
+        request,
+        data={'detail': 'database integrity error.'},
+        status=500,
     )
 
 
