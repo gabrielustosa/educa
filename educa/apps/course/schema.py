@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ninja import FilterSchema, Schema
 from pydantic import Field, validator
 
@@ -27,6 +29,12 @@ class CourseOut(Schema):
     categories: list[int]
     instructors: list[int]
     is_published: bool = False
+    created: datetime
+    modified: datetime
+
+    @validator('created', 'modified', allow_reuse=True)
+    def convert_datetime(cls, value: datetime):
+        return value.isoformat()
 
     @staticmethod
     def resolve_categories(obj):

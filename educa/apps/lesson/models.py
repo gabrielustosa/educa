@@ -1,8 +1,5 @@
-from django.core.exceptions import ValidationError
 from django.db import models
 from ordered_model.models import OrderedModel
-from pytube import YouTube
-from pytube.exceptions import RegexMatchError
 
 from educa.apps.core.models import ContentBase, CreatorBase, TimeStampedBase
 from educa.apps.core.video import get_video_length
@@ -10,7 +7,7 @@ from educa.apps.course.models import Course
 from educa.apps.module.models import Module
 
 
-class Lesson(ContentBase, OrderedModel):
+class Lesson(ContentBase, TimeStampedBase, OrderedModel):
     """
     Este modelo representa uma aula de um módulo de um curso.
 

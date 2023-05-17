@@ -1,11 +1,11 @@
 from django.db import models
 from ordered_model.models import OrderedModel
 
-from educa.apps.core.models import ContentBase
+from educa.apps.core.models import ContentBase, TimeStampedBase
 from educa.apps.course.models import Course
 
 
-class Module(ContentBase, OrderedModel):
+class Module(ContentBase, TimeStampedBase, OrderedModel):
     """
     Esse modelo representa um módulo do curso que contém todas as aulas do curso.
 
