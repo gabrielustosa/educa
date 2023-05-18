@@ -12,6 +12,7 @@ from educa.apps.core.schema import (
     PermissionDeniedInstructor,
 )
 from educa.apps.course.models import Course
+from educa.apps.lesson.api_relation import lesson_relation_router
 from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.schema import (
     LessonFilter,
@@ -23,6 +24,8 @@ from educa.apps.module.models import Module
 from educa.apps.user.auth.token import AuthBearer
 
 lesson_router = Router(auth=AuthBearer())
+
+lesson_router.add_router('/relation/', lesson_relation_router)
 
 
 @lesson_router.post(

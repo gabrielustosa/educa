@@ -47,3 +47,33 @@ class LessonUpdate(Schema):
     video: str | None
     module_id: int | None
     is_published: bool | None
+
+
+class LessonRelationIn(Schema):
+    lesson_id: int
+
+
+class LessonRelationOut(Schema):
+    id: int
+    creator_id: int
+    lesson_id: int
+    done: bool
+    created: datetime
+    modified: datetime
+
+    @validator('created', 'modified', allow_reuse=True)
+    def convert_datetime(cls, value: datetime):
+        return value.isoformat()
+
+
+class LessonRelationFilter(FilterSchema):
+    course_id: str | None = Field(q='lesson__course_id__in')
+    module_id: str | None = Field(q='lesson__module_id__in')
+
+    @validator('course_id', 'module_id', allow_reuse=True)
+    def split_string(cls, value):
+        return value.split(',')
+
+
+class LessonRelationUpdate(Schema):
+    done: bool

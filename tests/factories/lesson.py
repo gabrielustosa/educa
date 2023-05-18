@@ -1,9 +1,10 @@
 import factory
 from factory import fuzzy
 
-from educa.apps.lesson.models import Lesson
+from educa.apps.lesson.models import Lesson, LessonRelation
 from tests.factories.course import CourseFactory
 from tests.factories.module import ModuleFactory
+from tests.factories.user import UserFactory
 
 
 class LessonFactory(factory.django.DjangoModelFactory):
@@ -18,3 +19,12 @@ class LessonFactory(factory.django.DjangoModelFactory):
     module = factory.SubFactory(
         ModuleFactory, course=factory.SelfAttribute('..course')
     )
+
+
+class LessonRelationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LessonRelation
+
+    creator = factory.SubFactory(UserFactory)
+    lesson = factory.SubFactory(LessonFactory)
+    done = fuzzy.FuzzyChoice([True, False])
