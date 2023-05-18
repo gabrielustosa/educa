@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from ninja import Query, Router, Schema
+from ninja import Query, Router
 from ninja.errors import HttpError
 
 from educa.apps.core.permissions import (
@@ -11,12 +11,14 @@ from educa.apps.core.schema import (
     NotFound,
     PermissionDeniedInstructor,
 )
+from educa.apps.course.api_relation import course_relation_router
 from educa.apps.course.models import Course
 from educa.apps.course.schema import (
     CourseFilter,
     CourseIn,
     CourseOut,
     CourseUpdate,
+    InvalidCategoriesOrInstructors,
 )
 from educa.apps.course.sub_apps.category.api import category_router
 from educa.apps.course.sub_apps.category.models import Category
@@ -29,6 +31,7 @@ course_router = Router()
 course_router.add_router('/rating/', rating_router)
 course_router.add_router('/category/', category_router)
 course_router.add_router('/message/', message_router)
+course_router.add_router('/relation/', course_relation_router)
 
 
 def _validate_instructors_and_categories(data):
@@ -46,10 +49,6 @@ def _validate_instructors_and_categories(data):
             raise HttpError(message='invalid instructors', status_code=400)
 
     return categories, instructors
-
-
-class InvalidCategoriesOrInstructors(Schema):
-    detail: str = 'invalid instructors or categories'
 
 
 @course_router.post(

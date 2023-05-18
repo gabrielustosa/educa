@@ -43,6 +43,7 @@ class CourseRelation(CreatorBase, TimeStampedBase):
     """
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    done = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

@@ -2,7 +2,8 @@ import factory
 from django.utils.text import slugify
 from factory import fuzzy
 
-from educa.apps.course.models import Course
+from educa.apps.course.models import Course, CourseRelation
+from tests.factories.user import UserFactory
 
 
 class CourseFactory(factory.django.DjangoModelFactory):
@@ -19,3 +20,12 @@ class CourseFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def slug(self):
         return slugify(self.title)
+
+
+class CourseRelationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CourseRelation
+
+    creator = factory.SubFactory(UserFactory)
+    course = factory.SubFactory(CourseFactory)
+    done = fuzzy.FuzzyChoice([True, False])

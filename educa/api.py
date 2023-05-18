@@ -15,7 +15,7 @@ api = NinjaAPI(title='Educa')
 @api.exception_handler(InvalidToken)
 def on_invalid_token(request, exc):
     return api.create_response(
-        request, data={'detail': 'Could not validate credentials'}, status=401
+        request, data={'detail': 'could not validate credentials'}, status=401
     )
 
 
@@ -23,7 +23,7 @@ def on_invalid_token(request, exc):
 def on_permission_denied(request, exc):
     return api.create_response(
         request,
-        data={'detail': 'You do not have permission to perform this action.'},
+        data={'detail': 'you do not have permission to perform this action.'},
         status=403,
     )
 

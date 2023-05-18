@@ -66,3 +66,28 @@ class CourseUpdate(Schema):
     categories: list[int] | None
     instructors: list[int] | None
     is_published: bool | None
+
+
+class InvalidCategoriesOrInstructors(Schema):
+    detail: str = 'invalid instructors or categories'
+
+
+class CourseRelationIn(Schema):
+    course_id: int
+
+
+class CourseRelationOut(Schema):
+    id: int
+    creator_id: int
+    course_id: int
+    done: bool
+    created: datetime
+    modified: datetime
+
+    @validator('created', 'modified', allow_reuse=True)
+    def convert_datetime(cls, value: datetime):
+        return value.isoformat()
+
+
+class CourseRelationUpdate(Schema):
+    done: bool
