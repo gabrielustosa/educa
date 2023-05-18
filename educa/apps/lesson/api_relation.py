@@ -21,9 +21,9 @@ lesson_relation_router = Router(auth=AuthBearer())
     description='Endpoint para criação de um relacionamento de um usuário com uma aula.',
     response={
         200: LessonRelationOut,
-        400: DuplicatedObject,
         401: NotAuthenticated,
         404: NotFound,
+        409: DuplicatedObject,
     },
 )
 def create_lesson_relation(request, data: LessonRelationIn):
