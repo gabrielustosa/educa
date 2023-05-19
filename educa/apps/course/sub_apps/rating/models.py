@@ -2,7 +2,6 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
-from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from educa.apps.core.models import CreatorBase, TimeStampedBase
