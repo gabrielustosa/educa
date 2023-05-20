@@ -51,6 +51,7 @@ def permission_object_required(
     id_kwarg: str = None,
     permissions: list[type[PermissionObjectBase]],
     many: bool = False,
+    extra_query: Callable = None,
 ):
     def wrapper(func):
         @wraps(func)
@@ -75,11 +76,13 @@ def permission_object_required(
                     object_id = getattr(data, id_kwarg, None)
                     if object_id is None:
                         return func(request, *args, **kwargs)
-
                 query = model.objects.filter(id=object_id)
 
             for permission in permissions_init:
                 query = permission.compose_query(query)
+
+            if extra_query is not None:
+                query = extra_query(query)
 
             if not many:
                 obj = query.first()
