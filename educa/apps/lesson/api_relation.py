@@ -1,34 +1,21 @@
 from django.shortcuts import get_object_or_404
 from ninja import Query, Router
 
-from educa.apps.core.schema import DuplicatedObject, NotAuthenticated, NotFound
+from educa.apps.core.permissions import is_enrolled, permission_object_required
+from educa.apps.core.schema import (
+    NotAuthenticated,
+    NotFound,
+    PermissionDeniedEnrolled,
+)
 from educa.apps.lesson.models import Lesson, LessonRelation
 from educa.apps.lesson.schema import (
     LessonRelationFilter,
-    LessonRelationIn,
     LessonRelationOut,
     LessonRelationUpdate,
 )
 from educa.apps.user.auth.token import AuthBearer
 
 lesson_relation_router = Router(auth=AuthBearer())
-
-
-@lesson_relation_router.post(
-    '',
-    tags=['Relacionamento Aula'],
-    summary='Criar relacionamento com aula',
-    description='Endpoint para criação de um relacionamento de um usuário com uma aula.',
-    response={
-        200: LessonRelationOut,
-        401: NotAuthenticated,
-        404: NotFound,
-        409: DuplicatedObject,
-    },
-)
-def create_lesson_relation(request, data: LessonRelationIn):
-    get_object_or_404(Lesson, id=data.lesson_id)
-    return LessonRelation.objects.create(lesson_id=data.lesson_id)
 
 
 @lesson_relation_router.get(
@@ -39,13 +26,16 @@ def create_lesson_relation(request, data: LessonRelationIn):
     response={
         200: LessonRelationOut,
         401: NotAuthenticated,
+        403: PermissionDeniedEnrolled,
         404: NotFound,
     },
 )
+@permission_object_required(Lesson, [is_enrolled])
 def get_lesson_relation(request, lesson_id: int):
-    return get_object_or_404(
-        LessonRelation, lesson_id=lesson_id, creator=request.user
+    relation, _ = LessonRelation.objects.get_or_create(
+        lesson_id=lesson_id, creator=request.user
     )
+    return relation
 
 
 @lesson_relation_router.get(
@@ -89,14 +79,16 @@ def delete_lesson_relation(request, lesson_id: int):
     response={
         200: LessonRelationOut,
         401: NotAuthenticated,
+        403: PermissionDeniedEnrolled,
         404: NotFound,
     },
 )
+@permission_object_required(Lesson, [is_enrolled])
 def update_lesson_relation(
     request, lesson_id: int, data: LessonRelationUpdate
 ):
-    relation = get_object_or_404(
-        LessonRelation, lesson_id=lesson_id, creator=request.user
+    relation, _ = LessonRelation.objects.get_or_create(
+        lesson_id=lesson_id, creator=request.user
     )
     relation.done = data.done
     relation.save()

@@ -49,10 +49,6 @@ class LessonUpdate(Schema):
     is_published: bool | None
 
 
-class LessonRelationIn(Schema):
-    lesson_id: int
-
-
 class LessonRelationOut(Schema):
     id: int
     creator_id: int
@@ -67,12 +63,8 @@ class LessonRelationOut(Schema):
 
 
 class LessonRelationFilter(FilterSchema):
-    course_id: str | None = Field(q='lesson__course_id__in')
-    module_id: str | None = Field(q='lesson__module_id__in')
-
-    @validator('course_id', 'module_id', allow_reuse=True)
-    def split_string(cls, value):
-        return value.split(',')
+    course_id: str | None = Field(q='lesson__course_id')
+    module_id: str | None = Field(q='lesson__module_id')
 
 
 class LessonRelationUpdate(Schema):

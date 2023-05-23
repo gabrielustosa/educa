@@ -46,10 +46,10 @@ def _get_data_from_endpoint(kwargs):
 
 
 def permission_object_required(
-    *,
     model: type[Model],
-    id_kwarg: str = None,
     permissions: list[type[PermissionObjectBase]],
+    *,
+    id_kwarg: str = None,
     many: bool = False,
     extra_query: Callable = None,
 ):
