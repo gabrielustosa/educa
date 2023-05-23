@@ -78,10 +78,6 @@ class QuestionUpdate(Schema):
     correct_response: int | None
 
 
-class QuizRelationIn(Schema):
-    quiz_id: int
-
-
 class QuizRelationOut(Schema):
     id: int
     creator_id: int
