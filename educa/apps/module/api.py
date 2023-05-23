@@ -18,9 +18,11 @@ from educa.apps.module.schema import (
     ModuleOut,
     ModuleUpdate,
 )
+from educa.apps.module.sub_apps.quiz.api import quiz_router
 from educa.apps.user.auth.token import AuthBearer
 
 module_router = Router()
+module_router.add_router('/quiz/', quiz_router)
 
 
 @module_router.post(

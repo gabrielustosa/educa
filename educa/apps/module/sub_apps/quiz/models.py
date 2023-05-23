@@ -55,7 +55,7 @@ class QuizQuestion(TimeStampedBase, OrderedModel):
     question = models.TextField()
     feedback = models.TextField()
     answers = ArrayField(models.TextField())
-    time_in_minutes = models.FloatField()
+    time_in_minutes = models.FloatField(default=0)
     correct_response = models.IntegerField()
     quiz = models.ForeignKey(
         Quiz, related_name='questions', on_delete=models.CASCADE
