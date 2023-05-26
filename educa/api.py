@@ -43,7 +43,7 @@ def on_integrity_error(request, exc):
         return api.create_response(
             request,
             data={'detail': 'duplicated object.'},
-            status=400,
+            status=409,
         )
     return api.create_response(
         request,

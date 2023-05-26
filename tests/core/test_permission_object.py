@@ -8,7 +8,6 @@ from educa.apps.core.permissions import (
     PermissionObjectBase,
     _get_data_from_endpoint,
     is_course_instructor,
-    is_creator_object,
     is_enrolled,
     permission_object_required,
 )

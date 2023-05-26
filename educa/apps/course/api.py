@@ -112,7 +112,7 @@ def list_course(request, filters: CourseFilter = Query(...)):
         403: PermissionDeniedInstructor,
     },
 )
-@permission_object_required(model=Course, permissions=[is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
 def delete_course(request, course_id: int):
     course = request.get_course()
     course.delete()
@@ -132,7 +132,7 @@ def delete_course(request, course_id: int):
         403: PermissionDeniedInstructor,
     },
 )
-@permission_object_required(model=Course, permissions=[is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
 def update_course(request, course_id: int, data: CourseUpdate):
     course = request.get_course()
 

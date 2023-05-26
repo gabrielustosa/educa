@@ -35,7 +35,7 @@ rating_router = Router()
     },
     auth=AuthBearer(),
 )
-@permission_object_required(model=Rating, permissions=[is_enrolled])
+@permission_object_required(Rating, [is_enrolled])
 def create_rating(request, data: RatingIn):
     return Rating.objects.create(**data.dict())
 

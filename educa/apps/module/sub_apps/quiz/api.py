@@ -54,8 +54,8 @@ quiz_router.add_router('/relation/', quiz_relation_router)
         404: NotFound,
     },
 )
-@permission_object_required(model=Course, permissions=[is_course_instructor])
-@permission_object_required(model=Module, permissions=[is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
+@permission_object_required(Module, [is_course_instructor])
 def create_quiz(request, data: QuizIn):
     return Quiz.objects.create(**data.dict())
 
@@ -72,8 +72,8 @@ def create_quiz(request, data: QuizIn):
         404: NotFound,
     },
 )
-@permission_object_required(model=Course, permissions=[is_course_instructor])
-@permission_object_required(model=Quiz, permissions=[is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
+@permission_object_required(Quiz, [is_course_instructor])
 def create_quiz_question(request, data: QuestionIn):
     return QuizQuestion.objects.create(**data.dict())
 
@@ -133,7 +133,7 @@ def get_quiz(request, quiz_id: int):
         404: NotFound,
     },
 )
-@permission_object_required(model=Quiz, permissions=[is_course_instructor])
+@permission_object_required(Quiz, [is_course_instructor])
 def delete_quiz(request, quiz_id: int):
     quiz = request.get_quiz()
     quiz.delete()
@@ -152,7 +152,7 @@ def delete_quiz(request, quiz_id: int):
         404: NotFound,
     },
 )
-@permission_object_required(model=Quiz, permissions=[is_course_instructor])
+@permission_object_required(Quiz, [is_course_instructor])
 def delete_quiz_question(request, quiz_id: int, question_id: int):
     question = get_object_or_404(QuizQuestion, id=question_id, quiz_id=quiz_id)
     question.delete()
@@ -171,7 +171,7 @@ def delete_quiz_question(request, quiz_id: int, question_id: int):
         404: NotFound,
     },
 )
-@permission_object_required(model=Quiz, permissions=[is_course_instructor])
+@permission_object_required(Quiz, [is_course_instructor])
 def update_quiz(request, quiz_id: int, data: QuizUpdate):
     quiz = request.get_quiz()
 
@@ -194,7 +194,7 @@ def update_quiz(request, quiz_id: int, data: QuizUpdate):
         404: NotFound,
     },
 )
-@permission_object_required(model=Quiz, permissions=[is_course_instructor])
+@permission_object_required(Quiz, [is_course_instructor])
 def update_quiz_question(
     request, quiz_id: int, question_id: int, data: QuestionUpdate
 ):

@@ -36,7 +36,7 @@ message_router = Router(auth=AuthBearer())
         404: NotFound,
     },
 )
-@permission_object_required(model=Course, permissions=[is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
 def create_message(request, data: MessageIn):
     return Message.objects.create(**data.dict())
 
@@ -53,7 +53,7 @@ def create_message(request, data: MessageIn):
         404: NotFound,
     },
 )
-@permission_object_required(model=Message, permissions=[is_enrolled])
+@permission_object_required(Message, [is_enrolled])
 def get_message(request, message_id: int):
     return request.get_message()
 
@@ -68,9 +68,7 @@ def get_message(request, message_id: int):
         401: NotAuthenticated,
     },
 )
-@permission_object_required(
-    model=Message, permissions=[is_enrolled], many=True
-)
+@permission_object_required(Message, [is_enrolled], many=True)
 def list_messages(request, filters: MessageFilter = Query(...)):
     query = request.get_message_query()
     return filters.filter(query)
@@ -88,7 +86,7 @@ def list_messages(request, filters: MessageFilter = Query(...)):
         404: NotFound,
     },
 )
-@permission_object_required(model=Message, permissions=[is_course_instructor])
+@permission_object_required(Message, [is_course_instructor])
 def delete_message(request, message_id: int):
     message = request.get_message()
     message.delete()
@@ -107,7 +105,7 @@ def delete_message(request, message_id: int):
         404: NotFound,
     },
 )
-@permission_object_required(model=Message, permissions=[is_course_instructor])
+@permission_object_required(Message, [is_course_instructor])
 def update_message(request, message_id: int, data: MessageUpdate):
     message = request.get_message()
     for key, value in data.dict(exclude_unset=True).items():

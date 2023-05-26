@@ -25,3 +25,7 @@ class PermissionDeniedEnrolled(Schema):
 
 class DuplicatedObject(Schema):
     detail: str = 'duplicated object.'
+
+
+class PermissionDeniedObjectCreator(Schema):
+    detail: str = 'only objecto creator is allowed to perform this action'

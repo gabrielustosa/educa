@@ -32,11 +32,11 @@ class LessonOut(Schema):
 
 
 class LessonFilter(FilterSchema):
-    course_id: str | None = Field(q='course_id__in')
+    course_id: str | None = Field(q='course_id')
     module_id: str | None = Field(q='module_id__in')
     title: str | None = Field(q='title__icontains')
 
-    @validator('course_id', 'module_id', allow_reuse=True)
+    @validator('module_id', allow_reuse=True)
     def split_string(cls, value):
         return value.split(',')
 

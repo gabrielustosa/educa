@@ -20,12 +20,14 @@ from educa.apps.lesson.schema import (
     LessonOut,
     LessonUpdate,
 )
+from educa.apps.lesson.sub_apps.question.api import question_router
 from educa.apps.module.models import Module
 from educa.apps.user.auth.token import AuthBearer
 
 lesson_router = Router(auth=AuthBearer())
 
 lesson_router.add_router('/relation/', lesson_relation_router)
+lesson_router.add_router('/question/', question_router)
 
 
 @lesson_router.post(
@@ -40,8 +42,8 @@ lesson_router.add_router('/relation/', lesson_relation_router)
         404: NotFound,
     },
 )
-@permission_object_required(model=Module, permissions=[is_course_instructor])
-@permission_object_required(model=Course, permissions=[is_course_instructor])
+@permission_object_required(Module, [is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
 def create_lesson(request, data: LessonIn):
     return Lesson.objects.create(**data.dict())
 
@@ -58,7 +60,7 @@ def create_lesson(request, data: LessonIn):
         404: NotFound,
     },
 )
-@permission_object_required(model=Lesson, permissions=[is_enrolled])
+@permission_object_required(Lesson, [is_enrolled])
 def get_lesson(request, lesson_id: int):
     return request.get_lesson()
 
@@ -74,7 +76,7 @@ def get_lesson(request, lesson_id: int):
         403: PermissionDeniedEnrolled,
     },
 )
-@permission_object_required(model=Lesson, permissions=[is_enrolled], many=True)
+@permission_object_required(Lesson, [is_enrolled], many=True)
 def list_lessons(request, filters: LessonFilter = Query(...)):
     query = request.get_lesson_query()
     return filters.filter(query)
@@ -92,7 +94,7 @@ def list_lessons(request, filters: LessonFilter = Query(...)):
         404: NotFound,
     },
 )
-@permission_object_required(model=Lesson, permissions=[is_course_instructor])
+@permission_object_required(Lesson, [is_course_instructor])
 def delete_lesson(request, lesson_id: int):
     lesson = request.get_lesson()
     lesson.delete()
@@ -111,8 +113,8 @@ def delete_lesson(request, lesson_id: int):
         404: NotFound,
     },
 )
-@permission_object_required(model=Lesson, permissions=[is_course_instructor])
-@permission_object_required(model=Module, permissions=[is_course_instructor])
+@permission_object_required(Lesson, [is_course_instructor])
+@permission_object_required(Module, [is_course_instructor])
 def update_lesson(request, lesson_id: int, data: LessonUpdate):
     lesson = request.get_lesson()
     for key, value in data.dict(exclude_unset=True).items():

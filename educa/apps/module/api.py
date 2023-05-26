@@ -38,7 +38,7 @@ module_router.add_router('/quiz/', quiz_router)
     },
     auth=AuthBearer(),
 )
-@permission_object_required(model=Course, permissions=[is_course_instructor])
+@permission_object_required(Course, [is_course_instructor])
 def create_module(request, data: ModuleIn):
     return Module.objects.create(**data.dict())
 
@@ -81,7 +81,7 @@ def list_modules(request, filters: ModuleFilter = Query(...)):
     },
     auth=AuthBearer(),
 )
-@permission_object_required(model=Module, permissions=[is_course_instructor])
+@permission_object_required(Module, [is_course_instructor])
 def delete_module(request, module_id: int):
     module = request.get_module()
     module.delete()
@@ -101,7 +101,7 @@ def delete_module(request, module_id: int):
     },
     auth=AuthBearer(),
 )
-@permission_object_required(model=Module, permissions=[is_course_instructor])
+@permission_object_required(Module, [is_course_instructor])
 def update_module(request, module_id: int, data: ModuleUpdate):
     module = request.get_module()
     for key, value in data.dict(exclude_unset=True).items():
