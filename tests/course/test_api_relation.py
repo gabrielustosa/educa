@@ -45,7 +45,7 @@ def test_cant_create_two_create_course_relation():
         user_options={'existing': user},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_get_course_relation():
