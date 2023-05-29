@@ -10,12 +10,13 @@ from educa.apps.lesson.models import Lesson
 
 class Content(ContentBase, TimeStampedBase, OrderedModel):
     """
-    Este modelo representa o conteúdo extra de uma aula, existindo três tipos: Texto, Arquivo ou Link
+    Este modelo representa o conteúdo extra de uma aula, existindo quatro tipos: Texto, Arquivo, Link ou Imagem
 
     Fields:
         order: representa a sua ordem crescente dentro da aula, a qual é definida automáticamente.
     """
 
+    description = models.TextField(null=True)
     lesson = models.ForeignKey(
         Lesson,
         related_name='contents',
@@ -57,3 +58,7 @@ class Link(models.Model):
 
 class File(models.Model):
     file = models.FileField(upload_to='files')
+
+
+class Image(models.Model):
+    image = models.ImageField(upload_to='image')
