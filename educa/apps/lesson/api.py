@@ -21,6 +21,7 @@ from educa.apps.lesson.schema import (
     LessonUpdate,
 )
 from educa.apps.lesson.sub_apps.content.api import content_router
+from educa.apps.lesson.sub_apps.note.api import note_router
 from educa.apps.lesson.sub_apps.question.api import question_router
 from educa.apps.module.models import Module
 from educa.apps.user.auth.token import AuthBearer
@@ -30,6 +31,7 @@ lesson_router = Router(auth=AuthBearer())
 lesson_router.add_router('/relation/', lesson_relation_router)
 lesson_router.add_router('/question/', question_router)
 lesson_router.add_router('/content/', content_router)
+lesson_router.add_router('/note/', note_router)
 
 
 @lesson_router.post(
