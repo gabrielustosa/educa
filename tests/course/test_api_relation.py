@@ -4,8 +4,8 @@ from django.urls import reverse_lazy
 from educa.apps.course.models import CourseRelation
 from educa.apps.course.schema import CourseRelationOut
 from tests.base import AuthenticatedClient
-from tests.factories.course import CourseFactory, CourseRelationFactory
-from tests.factories.user import UserFactory
+from tests.course.factories.course import CourseFactory, CourseRelationFactory
+from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 

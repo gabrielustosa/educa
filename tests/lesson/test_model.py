@@ -1,6 +1,6 @@
 import pytest
 
-from tests.factories.lesson import LessonFactory
+from tests.lesson.factories.lesson import LessonFactory
 
 pytestmark = pytest.mark.django_db
 

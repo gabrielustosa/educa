@@ -4,10 +4,10 @@ from django.urls import reverse_lazy
 from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.schema import LessonOut
 from tests.base import AuthenticatedClient
-from tests.factories.course import CourseFactory
-from tests.factories.lesson import LessonFactory
-from tests.factories.module import ModuleFactory
-from tests.factories.user import UserFactory
+from tests.course.factories.course import CourseFactory
+from tests.lesson.factories.lesson import LessonFactory
+from tests.module.factories.module import ModuleFactory
+from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 

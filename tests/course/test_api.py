@@ -6,9 +6,9 @@ from educa.apps.course.api import _validate_instructors_and_categories
 from educa.apps.course.models import Course
 from educa.apps.course.schema import CourseOut
 from tests.base import AuthenticatedClient
-from tests.factories.category import CategoryFactory
-from tests.factories.course import CourseFactory
-from tests.factories.user import UserFactory
+from tests.course.factories.category import CategoryFactory
+from tests.course.factories.course import CourseFactory
+from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 

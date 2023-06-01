@@ -2,7 +2,7 @@ from django.test import Client
 
 from educa.apps.user.auth.token import create_jwt_access_token
 from educa.apps.user.models import User
-from tests.factories.user import UserFactory
+from tests.user.factories.user import UserFactory
 
 
 class AuthenticatedClient(Client):
