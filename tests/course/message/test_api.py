@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 
 from educa.apps.course.sub_apps.message.models import Message
 from educa.apps.course.sub_apps.message.schema import MessageOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.course.factories.course import CourseFactory
 from tests.course.factories.message import MessageFactory
 from tests.user.factories.user import UserFactory

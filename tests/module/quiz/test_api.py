@@ -7,7 +7,7 @@ from educa.apps.module.sub_apps.quiz.models import (
     QuizRelation,
 )
 from educa.apps.module.sub_apps.quiz.schema import QuestionOut, QuizOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.course.factories.course import CourseFactory
 from tests.module.factories.module import ModuleFactory
 from tests.module.factories.quiz import QuizFactory, QuizQuestionFactory

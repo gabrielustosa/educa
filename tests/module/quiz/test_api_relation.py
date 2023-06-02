@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse_lazy
 
 from educa.apps.module.sub_apps.quiz.models import QuizRelation
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.module.factories.quiz import QuizFactory, QuizRelationFactory
 from tests.user.factories.user import UserFactory
 

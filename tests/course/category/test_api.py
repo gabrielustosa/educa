@@ -3,7 +3,7 @@ from pytest import mark
 
 from educa.apps.course.sub_apps.category.models import Category
 from educa.apps.course.sub_apps.category.schema import CategoryOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.course.factories.category import CategoryFactory
 
 client = AuthenticatedClient()

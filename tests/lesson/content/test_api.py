@@ -8,7 +8,7 @@ from PIL import Image
 
 from educa.apps.lesson.sub_apps.content.models import Content
 from educa.apps.lesson.sub_apps.content.schema import ContentOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.content import (
     ContentFactory,

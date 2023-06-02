@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 
 from educa.apps.course.sub_apps.rating.models import Rating
 from educa.apps.course.sub_apps.rating.schema import RatingOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.course.factories.course import CourseFactory
 from tests.course.factories.rating import RatingFactory
 from tests.user.factories.user import UserFactory

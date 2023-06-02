@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 
 from educa.apps.lesson.sub_apps.note.models import Note
 from educa.apps.lesson.sub_apps.note.schema import NoteOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.lesson import LessonFactory
 from tests.lesson.factories.note import NoteFactory

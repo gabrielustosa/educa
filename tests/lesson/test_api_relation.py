@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 
 from educa.apps.lesson.models import LessonRelation
 from educa.apps.lesson.schema import LessonRelationOut
-from tests.base import AuthenticatedClient
+from tests.client import AuthenticatedClient
 from tests.lesson.factories.lesson import LessonFactory, LessonRelationFactory
 from tests.user.factories.user import UserFactory
 
