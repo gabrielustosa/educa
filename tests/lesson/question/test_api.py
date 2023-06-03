@@ -1,9 +1,8 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.lesson.sub_apps.question.models import Question
 from educa.apps.lesson.sub_apps.question.schema import QuestionOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.lesson import LessonFactory
 from tests.lesson.factories.question import QuestionFactory
@@ -12,7 +11,6 @@ from tests.user.factories.user import UserFactory
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-question_url = reverse_lazy('api-1.0.0:create_question')
 
 
 def test_create_question():
@@ -27,7 +25,7 @@ def test_create_question():
     }
 
     response = client.post(
-        question_url,
+        api_v1_url('create_question'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -49,7 +47,7 @@ def test_create_question_user_is_not_instructor():
     }
 
     response = client.post(
-        question_url,
+        api_v1_url('create_question'),
         payload,
         content_type='application/json',
     )
@@ -63,7 +61,7 @@ def test_get_question():
     user.enrolled_courses.add(question.course)
 
     response = client.get(
-        f'{question_url}{question.id}',
+        api_v1_url('get_question', question_id=question.id),
         user_options={'existing': user},
     )
 
@@ -77,7 +75,7 @@ def test_get_question_user_is_not_enrroled():
     question = QuestionFactory()
 
     response = client.get(
-        f'{question_url}{question.id}',
+        api_v1_url('get_question', question_id=question.id),
     )
 
     assert response.status_code == 403
@@ -89,7 +87,9 @@ def test_list_questions():
     user.enrolled_courses.add(course)
     questions = QuestionFactory.create_batch(10, course=course)
 
-    response = client.get(question_url, user_options={'existing': user})
+    response = client.get(
+        api_v1_url('list_questions'), user_options={'existing': user}
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -101,7 +101,7 @@ def test_list_questions_user_is_not_enrolled():
     course = CourseFactory()
     QuestionFactory.create_batch(5, course=course)
 
-    response = client.get(question_url)
+    response = client.get(api_v1_url('list_questions'))
 
     assert response.status_code == 200
     assert response.json() == []
@@ -115,7 +115,7 @@ def test_list_question_filter_course():
     QuestionFactory.create_batch(5)
 
     response = client.get(
-        f'{question_url}?course_id={course.id}',
+        api_v1_url('list_questions', query_params={'course_id': course.id}),
         user_options={'existing': user},
     )
 
@@ -135,7 +135,7 @@ def test_list_question_filter_lesson():
     QuestionFactory.create_batch(5)
 
     response = client.get(
-        f'{question_url}?lesson_id={lesson.id}',
+        api_v1_url('list_questions', query_params={'lesson_id': lesson.id}),
         user_options={'existing': user},
     )
 
@@ -155,7 +155,8 @@ def test_list_question_filter_title():
     QuestionFactory.create_batch(5, course=course)
 
     response = client.get(
-        f'{question_url}?title={title}', user_options={'existing': user}
+        api_v1_url('list_questions', query_params={'title': title}),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -169,7 +170,8 @@ def test_delete_question():
     question = QuestionFactory(creator=user)
 
     response = client.delete(
-        f'{question_url}{question.id}', user_options={'existing': user}
+        api_v1_url('delete_question', question_id=question.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -179,7 +181,9 @@ def test_delete_question():
 def test_delete_question_user_is_not_creator():
     question = QuestionFactory()
 
-    response = client.delete(f'{question_url}{question.id}')
+    response = client.delete(
+        api_v1_url('delete_question', question_id=question.id)
+    )
 
     assert response.status_code == 403
 
@@ -192,7 +196,7 @@ def test_update_question():
     }
 
     response = client.patch(
-        f'{question_url}{question.id}',
+        api_v1_url('update_question', question_id=question.id),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -209,7 +213,7 @@ def test_update_question_user_is_not_creator():
     }
 
     response = client.patch(
-        f'{question_url}{question.id}',
+        api_v1_url('update_question', question_id=question.id),
         payload,
         content_type='application/json',
     )

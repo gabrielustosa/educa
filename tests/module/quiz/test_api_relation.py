@@ -1,8 +1,7 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.module.sub_apps.quiz.models import QuizRelation
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.module.factories.quiz import QuizFactory, QuizRelationFactory
 from tests.user.factories.user import UserFactory
 
@@ -17,11 +16,9 @@ def test_delete_quiz_relation():
     user = UserFactory()
     QuizRelation.objects.create(quiz=quiz, creator=user)
 
-    delete_quiz_relation_url = reverse_lazy(
-        'api-1.0.0:delete_quiz_relation', kwargs={'quiz_id': quiz.id}
-    )
     response = client.delete(
-        delete_quiz_relation_url, user_options={'existing': user}
+        api_v1_url('delete_quiz_relation', quiz_id=quiz.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204

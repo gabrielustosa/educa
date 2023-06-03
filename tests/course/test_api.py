@@ -1,11 +1,10 @@
 import pytest
-from django.urls import reverse_lazy
 from ninja.errors import HttpError
 
 from educa.apps.course.api import _validate_instructors_and_categories
 from educa.apps.course.models import Course
 from educa.apps.course.schema import CourseOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.category import CategoryFactory
 from tests.course.factories.course import CourseFactory
 from tests.user.factories.user import UserFactory
@@ -13,7 +12,6 @@ from tests.user.factories.user import UserFactory
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-course_url = reverse_lazy('api-1.0.0:create_course')
 
 
 @pytest.mark.parametrize(
@@ -40,7 +38,6 @@ def test_validate_instructors_and_categories_failed(name):
 def test_create_course():
     category = CategoryFactory()
     instructor = UserFactory()
-
     payload = {
         'title': 'string',
         'description': 'string',
@@ -55,7 +52,7 @@ def test_create_course():
     }
 
     response = client.post(
-        course_url,
+        api_v1_url('create_course'),
         payload,
         content_type='application/json',
     )
@@ -70,14 +67,14 @@ def test_create_course():
 def test_get_course():
     course = CourseFactory()
 
-    response = client.get(f'{course_url}{course.id}')
+    response = client.get(api_v1_url('get_course', course_id=course.id))
 
     assert response.status_code == 200
     assert response.json() == CourseOut.from_orm(course)
 
 
 def test_get_course_that_do_not_exists():
-    response = client.get(f'{course_url}56414156110')
+    response = client.get(api_v1_url('get_course', course_id=4510547))
 
     assert response.status_code == 404
 
@@ -85,7 +82,7 @@ def test_get_course_that_do_not_exists():
 def test_list_course():
     courses = CourseFactory.create_batch(10)
 
-    response = client.get(course_url)
+    response = client.get(api_v1_url('list_courses'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -104,7 +101,9 @@ def test_list_course_filter(name, value, extra_kwargs):
     CourseFactory.create_batch(3)
     courses = CourseFactory.create_batch(5, **extra_kwargs)
 
-    response = client.get(f'{course_url}?{name}={value}')
+    response = client.get(
+        api_v1_url('list_courses', query_params={name: value})
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -120,7 +119,12 @@ def test_list_course_filter_categories():
     ]
     [course.categories.add(*categories_id) for course in courses]
 
-    response = client.get(f'{course_url}?categories={",".join(categories_id)}')
+    response = client.get(
+        api_v1_url(
+            'list_courses',
+            query_params={'categories': ','.join(categories_id)},
+        )
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -134,7 +138,8 @@ def test_delete_course():
     course.instructors.add(user)
 
     response = client.delete(
-        f'{course_url}{course.id}', user_options={'existing': user}
+        api_v1_url('delete_course', course_id=course.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -142,7 +147,7 @@ def test_delete_course():
 
 
 def test_delete_course_that_do_not_exists():
-    response = client.delete(f'{course_url}15161450')
+    response = client.delete(api_v1_url('delete_course', course_id=41047))
 
     assert response.status_code == 404
 
@@ -150,7 +155,7 @@ def test_delete_course_that_do_not_exists():
 def test_delete_course_user_is_not_instructor():
     course = CourseFactory()
 
-    response = client.delete(f'{course_url}{course.id}')
+    response = client.delete(api_v1_url('delete_course', course_id=course.id))
 
     assert response.status_code == 403
     assert Course.objects.filter(id=course.id).exists()
@@ -163,7 +168,7 @@ def test_update_course():
     payload = {'title': 'new title', 'description': 'new description'}
 
     response = client.patch(
-        f'{course_url}{course.id}',
+        api_v1_url('update_course', course_id=course.id),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -181,7 +186,7 @@ def test_update_course_that_do_not_exists():
     payload = {'title': 'new title', 'description': 'new description'}
 
     response = client.patch(
-        f'{course_url}561465160',
+        api_v1_url('update_course', course_id=1232113),
         payload,
         content_type='application/json',
     )
@@ -194,7 +199,7 @@ def test_update_course_user_is_not_instructor():
     payload = {'title': 'new title', 'description': 'new description'}
 
     response = client.patch(
-        f'{course_url}{course.id}',
+        api_v1_url('update_course', course_id=course.id),
         payload,
         content_type='application/json',
     )
@@ -214,7 +219,7 @@ def test_update_course(name, factory):
     payload = {name: objs}
 
     response = client.patch(
-        f'{course_url}{course.id}',
+        api_v1_url('update_course', course_id=course.id),
         payload,
         content_type='application/json',
         user_options={'existing': user},

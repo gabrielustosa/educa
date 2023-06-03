@@ -95,7 +95,7 @@ def get_course(request, course_id: int):
     summary='Lista todos os cursos',
     description='Endpoint que retorna uma lista de todos os cursos disponíveis. Os filtros devem ser passados separados por virgulas caso haja mais de um valor.',
 )
-def list_course(request, filters: CourseFilter = Query(...)):
+def list_courses(request, filters: CourseFilter = Query(...)):
     return filters.filter(Course.objects.all()).distinct()
 
 

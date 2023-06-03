@@ -21,5 +21,11 @@ class AuthenticatedClient(Client):
         return environ
 
 
-def api_v1_url(url_name, **kwargs):
-    return reverse_lazy(f'api-1.0.0:{url_name}', kwargs=kwargs)
+def api_v1_url(url_name, query_params=None, **kwargs):
+    url = reverse_lazy(f'api-1.0.0:{url_name}', kwargs=kwargs)
+    if query_params is not None:
+        query_params = [
+            f'{query}={value}' for query, value in query_params.items()
+        ]
+        return f'{url}?{"&".join(query_params)}'
+    return url

@@ -1,9 +1,8 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.lesson.sub_apps.note.models import Note
 from educa.apps.lesson.sub_apps.note.schema import NoteOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.lesson import LessonFactory
 from tests.lesson.factories.note import NoteFactory
@@ -12,7 +11,6 @@ from tests.user.factories.user import UserFactory
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-note_url = reverse_lazy('api-1.0.0:create_note')
 
 
 def test_create_note():
@@ -27,7 +25,7 @@ def test_create_note():
     }
 
     response = client.post(
-        note_url,
+        api_v1_url('create_note'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -44,7 +42,7 @@ def test_get_note():
     note = NoteFactory(creator=user)
 
     response = client.get(
-        f'{note_url}{note.id}',
+        api_v1_url('get_note', note_id=note.id),
         user_options={'existing': user},
     )
 
@@ -58,7 +56,9 @@ def test_list_notes():
     notes = NoteFactory.create_batch(10, course=course, creator=user)
     NoteFactory.create_batch(5)
 
-    response = client.get(note_url, user_options={'existing': user})
+    response = client.get(
+        api_v1_url('list_notes'), user_options={'existing': user}
+    )
 
     assert response.status_code == 200
     assert response.json() == [NoteOut.from_orm(note) for note in notes]
@@ -73,7 +73,7 @@ def test_list_note_filter_lesson():
     NoteFactory.create_batch(5)
 
     response = client.get(
-        f'{note_url}?lesson_id={lesson.id}',
+        api_v1_url('list_notes', query_params={'lesson_id': lesson.id}),
         user_options={'existing': user},
     )
 
@@ -90,7 +90,8 @@ def test_list_note_filter_note():
     NoteFactory.create_batch(5, course=course)
 
     response = client.get(
-        f'{note_url}?note={note}', user_options={'existing': user}
+        api_v1_url('list_notes', query_params={'note': note}),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -102,7 +103,8 @@ def test_delete_note():
     note = NoteFactory(creator=user)
 
     response = client.delete(
-        f'{note_url}{note.id}', user_options={'existing': user}
+        api_v1_url('delete_note', note_id=note.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -117,7 +119,7 @@ def test_update_note():
     }
 
     response = client.patch(
-        f'{note_url}{note.id}',
+        api_v1_url('update_note', note_id=note.id),
         payload,
         content_type='application/json',
         user_options={'existing': user},

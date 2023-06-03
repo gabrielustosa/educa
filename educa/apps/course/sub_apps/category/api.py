@@ -94,7 +94,7 @@ def delete_category(request, category_id: int):
     auth=AuthBearer(),
 )
 @permission_required([is_admin])
-def patch_category(request, category_id: int, data: CategoryUpdate):
+def update_category(request, category_id: int, data: CategoryUpdate):
     category = get_object_or_404(Category, id=category_id)
     Category.objects.filter(id=category_id).update(
         **data.dict(exclude_unset=True)

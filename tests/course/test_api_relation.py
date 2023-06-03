@@ -1,16 +1,14 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.course.models import CourseRelation
 from educa.apps.course.schema import CourseRelationOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.course import CourseFactory, CourseRelationFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-course_relation_url = reverse_lazy('api-1.0.0:create_course_relation')
 
 
 def test_create_course_relation():
@@ -19,7 +17,7 @@ def test_create_course_relation():
     payload = {'course_id': course.id}
 
     response = client.post(
-        course_relation_url,
+        api_v1_url('create_course_relation'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -39,7 +37,7 @@ def test_cant_create_two_create_course_relation():
     payload = {'course_id': course.id}
 
     response = client.post(
-        course_relation_url,
+        api_v1_url('create_course_relation'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -55,7 +53,8 @@ def test_get_course_relation():
     relation = CourseRelation.objects.create(course=course, creator=user)
 
     response = client.get(
-        f'{course_relation_url}{course.id}', user_options={'existing': user}
+        api_v1_url('get_course_relation', course_id=course.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -71,7 +70,9 @@ def test_list_course_relation():
         for course in courses
     ]
 
-    response = client.get(course_relation_url, user_options={'existing': user})
+    response = client.get(
+        api_v1_url('list_course_relations'), user_options={'existing': user}
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -86,7 +87,8 @@ def test_delete_course_relation():
     CourseRelation.objects.create(course=course, creator=user)
 
     response = client.delete(
-        f'{course_relation_url}{course.id}', user_options={'existing': user}
+        api_v1_url('delete_course_relation', course_id=course.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -100,7 +102,7 @@ def test_update_course_relation():
     payload = {'done': True}
 
     response = client.patch(
-        f'{course_relation_url}{course.id}',
+        api_v1_url('update_course_relation', course_id=course.id),
         payload,
         content_type='application/json',
         user_options={'existing': user},

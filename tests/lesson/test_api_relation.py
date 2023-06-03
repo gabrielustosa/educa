@@ -1,16 +1,14 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.lesson.models import LessonRelation
 from educa.apps.lesson.schema import LessonRelationOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.lesson.factories.lesson import LessonFactory, LessonRelationFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-lesson_relation_url = reverse_lazy('api-1.0.0:list_lesson_relations')
 
 
 def test_get_lesson_relation():
@@ -20,7 +18,8 @@ def test_get_lesson_relation():
     user.enrolled_courses.add(lesson.course)
 
     response = client.get(
-        f'{lesson_relation_url}{lesson.id}', user_options={'existing': user}
+        api_v1_url('get_lesson_relation', lesson_id=lesson.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -38,7 +37,9 @@ def test_list_lesson_relation():
         for lesson in lessons
     ]
 
-    response = client.get(lesson_relation_url, user_options={'existing': user})
+    response = client.get(
+        api_v1_url('list_lesson_relations'), user_options={'existing': user}
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -53,7 +54,8 @@ def test_delete_lesson_relation():
     LessonRelation.objects.create(lesson=lesson, creator=user)
 
     response = client.delete(
-        f'{lesson_relation_url}{lesson.id}', user_options={'existing': user}
+        api_v1_url('delete_lesson_relation', lesson_id=lesson.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -67,7 +69,7 @@ def test_update_lesson_relation():
     payload = {'done': True}
 
     response = client.patch(
-        f'{lesson_relation_url}{lesson.id}',
+        api_v1_url('update_lesson_relation', lesson_id=lesson.id),
         payload,
         content_type='application/json',
         user_options={'existing': user},

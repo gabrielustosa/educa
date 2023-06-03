@@ -1,9 +1,8 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.module.models import Module
 from educa.apps.module.schema import ModuleOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.module.factories.module import ModuleFactory
 from tests.user.factories.user import UserFactory
@@ -11,7 +10,6 @@ from tests.user.factories.user import UserFactory
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-module_url = reverse_lazy('api-1.0.0:create_module')
 
 
 def test_create_module():
@@ -26,7 +24,7 @@ def test_create_module():
     }
 
     response = client.post(
-        module_url,
+        api_v1_url('create_module'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -48,7 +46,7 @@ def test_create_module_with_invalid_course_id():
     }
 
     response = client.post(
-        module_url,
+        api_v1_url('create_module'),
         payload,
         content_type='application/json',
     )
@@ -66,7 +64,7 @@ def test_create_module_user_is_not_course_instructor():
     }
 
     response = client.post(
-        module_url,
+        api_v1_url('create_module'),
         payload,
         content_type='application/json',
     )
@@ -77,14 +75,14 @@ def test_create_module_user_is_not_course_instructor():
 def test_get_module():
     module = ModuleFactory()
 
-    response = client.get(f'{module_url}{module.id}')
+    response = client.get(api_v1_url('get_module', module_id=module.id))
 
     assert response.status_code == 200
     assert response.json() == ModuleOut.from_orm(module)
 
 
 def test_get_module_that_do_not_exists():
-    response = client.get(f'{module_url}40564156056')
+    response = client.get(api_v1_url('get_module', module_id=412))
 
     assert response.status_code == 404
 
@@ -92,7 +90,7 @@ def test_get_module_that_do_not_exists():
 def test_list_module():
     modules = ModuleFactory.create_batch(5)
 
-    response = client.get(module_url)
+    response = client.get(api_v1_url('list_modules'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -105,7 +103,9 @@ def test_module_list_course_filter():
     modules = ModuleFactory.create_batch(3, course=course)
     ModuleFactory.create_batch(5)
 
-    response = client.get(f'{module_url}?course_id={course.id}')
+    response = client.get(
+        api_v1_url('list_modules', query_params={'course_id': course.id})
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -117,7 +117,9 @@ def test_module_list_title_filter():
     modules = ModuleFactory.create_batch(5, title='testing title')
     ModuleFactory.create_batch(5)
 
-    response = client.get(f'{module_url}?title=testing title')
+    response = client.get(
+        api_v1_url('list_modules', query_params={'title': 'testing title'})
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -131,7 +133,7 @@ def test_module_delete():
     module.course.instructors.add(user)
 
     response = client.delete(
-        f'{module_url}{module.id}',
+        api_v1_url('delete_module', module_id=module.id),
         user_options={'existing': user},
     )
 
@@ -140,7 +142,7 @@ def test_module_delete():
 
 
 def test_delete_module_that_do_not_exists():
-    response = client.delete(f'{module_url}45140104')
+    response = client.delete(api_v1_url('delete_module', module_id=41560))
 
     assert response.status_code == 404
 
@@ -149,7 +151,7 @@ def test_module_delete_user_is_not_instructor():
     module = ModuleFactory()
 
     response = client.delete(
-        f'{module_url}{module.id}',
+        api_v1_url('delete_module', module_id=module.id),
     )
 
     assert response.status_code == 403
@@ -162,7 +164,7 @@ def test_module_update():
     payload = {'title': 'new title'}
 
     response = client.patch(
-        f'{module_url}{module.id}',
+        api_v1_url('update_module', module_id=module.id),
         payload,
         user_options={'existing': user},
         content_type='application/json',
@@ -178,7 +180,7 @@ def test_module_update_user_is_not_instructor():
     payload = {'title': 'new title'}
 
     response = client.patch(
-        f'{module_url}{module.id}',
+        api_v1_url('update_module', module_id=module.id),
         payload,
         content_type='application/json',
     )

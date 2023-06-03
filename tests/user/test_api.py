@@ -1,10 +1,8 @@
 import pytest
 from django.test import Client
-from django.urls import reverse_lazy
 
 from educa.apps.user.models import User
-
-user_url = reverse_lazy('api-1.0.0:create_user')
+from tests.client import api_v1_url
 
 client = Client()
 
@@ -18,7 +16,9 @@ def test_user_create():
         'username': 'test',
     }
 
-    response = client.post(user_url, payload, content_type='application/json')
+    response = client.post(
+        api_v1_url('create_user'), payload, content_type='application/json'
+    )
 
     assert response.status_code == 200
     user = User.objects.filter(email=payload['email']).first()

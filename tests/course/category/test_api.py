@@ -1,14 +1,11 @@
-from django.urls import reverse_lazy
 from pytest import mark
 
 from educa.apps.course.sub_apps.category.models import Category
 from educa.apps.course.sub_apps.category.schema import CategoryOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.category import CategoryFactory
 
 client = AuthenticatedClient()
-
-category_url = reverse_lazy('api-1.0.0:create_category')
 
 pytestmark = mark.django_db
 
@@ -21,7 +18,7 @@ def test_create_category():
         'is_published': True,
     }
     response = client.post(
-        category_url,
+        api_v1_url('create_category'),
         payload,
         content_type='application/json',
         user_options={'is_staff': True},
@@ -41,7 +38,7 @@ def test_category_user_is_not_admin():
         'is_published': True,
     }
     response = client.post(
-        category_url,
+        api_v1_url('create_category'),
         payload,
         content_type='application/json',
     )
@@ -52,7 +49,7 @@ def test_category_user_is_not_admin():
 def test_get_category():
     category = CategoryFactory()
 
-    response = client.get(f'{category_url}{category.id}')
+    response = client.get(api_v1_url('get_category', category_id=category.id))
 
     assert response.status_code == 200
     assert response.json() == CategoryOut.from_orm(category)
@@ -61,7 +58,7 @@ def test_get_category():
 def test_list_category():
     categories = CategoryFactory.create_batch(10)
 
-    response = client.get(category_url)
+    response = client.get(api_v1_url('list_categories'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -73,7 +70,8 @@ def test_delete_category():
     category = CategoryFactory()
 
     response = client.delete(
-        f'{category_url}{category.id}', user_options={'is_staff': True}
+        api_v1_url('delete_category', category_id=category.id),
+        user_options={'is_staff': True},
     )
 
     assert response.status_code == 204
@@ -83,7 +81,9 @@ def test_delete_category():
 def test_delete_category_user_is_not_admin():
     category = CategoryFactory()
 
-    response = client.delete(f'{category_url}{category.id}')
+    response = client.delete(
+        api_v1_url('delete_category', category_id=category.id)
+    )
 
     assert response.status_code == 403
 
@@ -94,7 +94,7 @@ def test_category_update():
     payload = {'title': 'test'}
 
     response = client.patch(
-        f'{category_url}{category.id}',
+        api_v1_url('update_category', category_id=category.id),
         payload,
         content_type='application/json',
         user_options={'is_staff': True},
@@ -113,7 +113,7 @@ def test_category_update_user_is_not_admin():
     payload = {'title': 'test'}
 
     response = client.patch(
-        f'{category_url}{category.id}',
+        api_v1_url('update_category', category_id=category.id),
         payload,
         content_type='application/json',
     )

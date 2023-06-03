@@ -1,9 +1,8 @@
 import pytest
-from django.urls import reverse_lazy
 
 from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.schema import LessonOut
-from tests.client import AuthenticatedClient
+from tests.client import AuthenticatedClient, api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.lesson import LessonFactory
 from tests.module.factories.module import ModuleFactory
@@ -12,7 +11,6 @@ from tests.user.factories.user import UserFactory
 pytestmark = pytest.mark.django_db
 
 client = AuthenticatedClient()
-lesson_url = reverse_lazy('api-1.0.0:create_lesson')
 
 
 def test_create_lesson():
@@ -28,7 +26,7 @@ def test_create_lesson():
     }
 
     response = client.post(
-        lesson_url,
+        api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -53,7 +51,7 @@ def test_create_lesson_with_invalid_course_id():
     }
 
     response = client.post(
-        lesson_url,
+        api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -72,7 +70,7 @@ def test_create_lesson_with_invalid_module_id():
     }
 
     response = client.post(
-        lesson_url,
+        api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
     )
@@ -91,7 +89,7 @@ def test_create_lesson_user_not_is_instructor():
     }
 
     response = client.post(
-        lesson_url,
+        api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
     )
@@ -113,7 +111,7 @@ def test_create_lesson_user_not_is_instructor_course_module():
     }
 
     response = client.post(
-        lesson_url,
+        api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
         user_options={'existing': user},
@@ -128,7 +126,8 @@ def test_get_lesson():
     user.enrolled_courses.add(lesson.course.id)
 
     response = client.get(
-        f'{lesson_url}{lesson.id}', user_options={'existing': user}
+        api_v1_url('get_lesson', lesson_id=lesson.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -136,7 +135,7 @@ def test_get_lesson():
 
 
 def test_get_lesson_that_do_not_exists():
-    response = client.get(f'{lesson_url}405610')
+    response = client.get(api_v1_url('get_lesson', lesson_id=15017))
 
     assert response.status_code == 404
 
@@ -144,7 +143,7 @@ def test_get_lesson_that_do_not_exists():
 def test_get_lesson_user_is_not_enrolled():
     lesson = LessonFactory()
 
-    response = client.get(f'{lesson_url}{lesson.id}')
+    response = client.get(api_v1_url('get_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 403
 
@@ -155,7 +154,9 @@ def test_list_lessons():
     user.enrolled_courses.add(course.id)
     lessons = LessonFactory.create_batch(2, course=course)
 
-    response = client.get(lesson_url, user_options={'existing': user})
+    response = client.get(
+        api_v1_url('list_lessons'), user_options={'existing': user}
+    )
 
     assert response.status_code == 200
     assert response.json() == [
@@ -166,7 +167,7 @@ def test_list_lessons():
 def test_list_lessons_user_is_not_enrolled():
     LessonFactory.create_batch(2)
 
-    response = client.get(lesson_url)
+    response = client.get(api_v1_url('list_lessons'))
 
     assert response.status_code == 200
     assert response.json() == []
@@ -180,7 +181,8 @@ def test_list_lessons_filter_course_id():
     lessons = LessonFactory.create_batch(2, course=course)
 
     response = client.get(
-        f'{lesson_url}?course_id={course.id}', user_options={'existing': user}
+        api_v1_url('list_lessons', query_params={'course_id': course.id}),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -198,7 +200,8 @@ def test_list_lessons_filter_module_id():
     lessons = LessonFactory.create_batch(2, module=module, course=course)
 
     response = client.get(
-        f'{lesson_url}?module_id={module.id}', user_options={'existing': user}
+        api_v1_url('list_lessons', query_params={'module_id': module.id}),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -216,7 +219,8 @@ def test_list_lessons_filter_title():
     lessons = LessonFactory.create_batch(2, course=course, title=title)
 
     response = client.get(
-        f'{lesson_url}?title={title}', user_options={'existing': user}
+        api_v1_url('list_lessons', query_params={'title': title}),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -231,7 +235,8 @@ def test_delete_lesson():
     user.instructors_courses.add(lesson.course)
 
     response = client.delete(
-        f'{lesson_url}{lesson.id}', user_options={'existing': user}
+        api_v1_url('delete_lesson', lesson_id=lesson.id),
+        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -239,7 +244,7 @@ def test_delete_lesson():
 
 
 def test_delete_lesson_that_do_not_exists():
-    response = client.delete(f'{lesson_url}15014')
+    response = client.delete(api_v1_url('delete_lesson', lesson_id=1021))
 
     assert response.status_code == 404
 
@@ -247,7 +252,7 @@ def test_delete_lesson_that_do_not_exists():
 def test_delete_lesson_user_is_not_instructor():
     lesson = LessonFactory()
 
-    response = client.delete(f'{lesson_url}{lesson.id}')
+    response = client.delete(api_v1_url('delete_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 403
 
@@ -259,7 +264,7 @@ def test_update_lesson():
     payload = {'title': 'new title'}
 
     response = client.patch(
-        f'{lesson_url}{lesson.id}',
+        api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
         user_options={'existing': user},
         content_type='application/json',
@@ -274,7 +279,7 @@ def test_update_lesson_that_do_not_exists():
     payload = {'title': 'new title'}
 
     response = client.patch(
-        f'{lesson_url}10566',
+        api_v1_url('update_lesson', lesson_id=3123),
         payload,
         content_type='application/json',
     )
@@ -287,7 +292,7 @@ def test_update_lesson_user_is_not_instructor():
     payload = {'title': 'new title'}
 
     response = client.patch(
-        f'{lesson_url}{lesson.id}',
+        api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
         content_type='application/json',
     )
@@ -303,7 +308,7 @@ def test_update_lesson_user_is_not_module_instructor():
     payload = {'module_id': module.id}
 
     response = client.patch(
-        f'{lesson_url}{lesson.id}',
+        api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
         user_options={'existing': user},
         content_type='application/json',
@@ -319,7 +324,7 @@ def test_update_lesson_video():
     payload = {'video': 'https://www.youtube.com/watch?v=jc36BlAEWlQ'}
 
     response = client.patch(
-        f'{lesson_url}{lesson.id}',
+        api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
         user_options={'existing': user},
         content_type='application/json',

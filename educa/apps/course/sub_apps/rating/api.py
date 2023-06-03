@@ -65,5 +65,5 @@ def get_rating(request, rating_id: int):
         400: InvalidFilterRating,
     },
 )
-def list_rating(request, filters: RatingFilter = Query(...)):
+def list_ratings(request, filters: RatingFilter = Query(...)):
     return filters.filter(Rating.objects.all())
