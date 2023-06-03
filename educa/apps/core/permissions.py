@@ -7,6 +7,7 @@ from django.http import Http404
 from ninja import FilterSchema, Schema
 
 from educa.apps.course.models import Course
+from educa.apps.user.auth.expection import InvalidToken
 
 
 def permission_required(permissions: list[Callable]):
@@ -38,7 +39,7 @@ class PermissionObjectBase:
         pass
 
 
-def _get_data_from_endpoint(kwargs):
+def get_data_from_endpoint(kwargs):
     for value in kwargs.values():
         klass = value.__class__
         if issubclass(klass, Schema) and not issubclass(klass, FilterSchema):
@@ -72,7 +73,7 @@ def permission_object_required(
             else:
                 object_id = kwargs.get(id_kwarg)
                 if object_id is None:
-                    data = _get_data_from_endpoint(kwargs)
+                    data = get_data_from_endpoint(kwargs)
                     object_id = getattr(data, id_kwarg, None)
                     if object_id is None:
                         return func(request, *args, **kwargs)
@@ -105,6 +106,11 @@ def permission_object_required(
 def is_admin(request, *args, **kwargs):
     if not request.user.is_staff:
         raise PermissionDenied
+
+
+def is_authenticated(request, *args, **kwargs):
+    if request.user.is_anonymous:
+        raise InvalidToken
 
 
 class is_course_instructor(PermissionObjectBase):

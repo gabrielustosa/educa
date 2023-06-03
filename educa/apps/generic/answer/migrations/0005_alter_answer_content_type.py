@@ -3,11 +3,8 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-import educa.apps.generic.answer.models
-
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
         ('answer', '0004_alter_answer_content_type'),
@@ -20,9 +17,6 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 to='contenttypes.contenttype',
-                validators=[
-                    educa.apps.generic.answer.models.validate_content_type_moel
-                ],
             ),
         ),
     ]

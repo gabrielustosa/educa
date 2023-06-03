@@ -16,6 +16,7 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 factory-boy = "^3.2.1"
 pytube = "^15.0.0"
 pillow = "^9.5.0"
+django-mptt = "^0.14.0"
 
 
 [tool.poetry.group.dev.dependencies]

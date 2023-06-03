@@ -1,57 +1,145 @@
 from django.shortcuts import get_object_or_404
 from ninja import Router
+from ninja.errors import HttpError
 
-from educa.apps.core.permissions import is_course_instructor
+from educa.apps.core.permissions import (
+    is_creator_object,
+    is_enrolled,
+    permission_object_required,
+)
+from educa.apps.core.schema import (
+    NotAuthenticated,
+    NotFound,
+    PermissionDeniedEnrolled,
+    PermissionDeniedObjectCreator,
+)
 from educa.apps.course.models import Course
-from educa.apps.generic.answer.models import Answer, validate_content_type_moel
-from educa.apps.generic.answer.schema import AnswerIn, AnswerOut
+from educa.apps.generic.answer.models import Answer
+from educa.apps.generic.answer.schema import AnswerIn, AnswerOut, AnswerUpdate
+from educa.apps.generic.decorator import validate_generic_model
 
 answer_router = Router()
 
 
-@answer_router.post('', response=AnswerOut)
+@answer_router.post(
+    '',
+    tags=['Resposta'],
+    summary='Criar resposta',
+    description='Endpoint para criar uma resposta genérica para um modelo.',
+    response={
+        200: AnswerOut,
+        401: NotAuthenticated,
+        403: PermissionDeniedEnrolled,
+        404: NotFound,
+    },
+)
+@validate_generic_model(Answer)
+@permission_object_required(Course, [is_enrolled])
 def create_answer(request, data: AnswerIn):
-    Model = validate_content_type_moel(data.model)
+    answer_data = data.dict()
 
-    obj = get_object_or_404(Model, id=data.object_id)
-    course = get_object_or_404(Course, id=data.course_id)
+    del answer_data['object_model']
+    object_id = answer_data.pop('object_id')
+    generic_model = request.get_generic_model()
+    generic_object = get_object_or_404(generic_model, id=object_id)
 
-    answer = Answer.objects.create(
-        course=course,
-        content=data.content,
-        object_id=data.object_id,
-        content_object=obj,
+    parent_id = answer_data.get('parent_id')
+    if parent_id is not None:
+        parent = get_object_or_404(Answer, id=parent_id)
+        if not isinstance(parent.content_object, generic_model):
+            raise HttpError(
+                message=f'you cannot assign generic model {parent.content_object._meta.object_name} with model {generic_model._meta.object_name}',
+                status_code=400,
+            )
+
+    return Answer.objects.create(
+        **answer_data,
+        content_object=generic_object,
     )
 
-    return answer
 
-
-@answer_router.get('{int:answer_id}', response=AnswerOut)
+@answer_router.get(
+    '{int:answer_id}',
+    tags=['Resposta'],
+    summary='Retornar resposta',
+    description='Endpoint para retornar uma resposta.',
+    response={
+        200: AnswerOut,
+        404: NotFound,
+    },
+)
 def get_answer(request, answer_id: int):
     return get_object_or_404(Answer, id=answer_id)
 
 
-@answer_router.get('{str:model}/{int:object_id}', response=list[AnswerOut])
-def list_answer(request, model: str, object_id: int):
-    validate_content_type_moel(model)
+@answer_router.get(
+    '{int:answer_id}/children',
+    tags=['Resposta'],
+    summary='Retornar respostas',
+    description='Endpoint retornar as respostas de uma resposta.',
+    response={
+        200: list[AnswerOut],
+        404: NotFound,
+    },
+)
+def list_answer_children(request, answer_id: int):
+    answer = get_object_or_404(Answer, id=answer_id)
+    return answer.get_children()
 
+
+@answer_router.get(
+    '{str:object_model}/{int:object_id}',
+    tags=['Resposta'],
+    summary='Listar todas as respostas',
+    description='Endpoint para retornar todas as respostas de um módelo.',
+    response={
+        200: list[AnswerOut],
+        401: NotAuthenticated,
+        403: PermissionDeniedEnrolled,
+        404: NotFound,
+    },
+)
+@validate_generic_model(Answer)
+def list_answer(request, object_model: str, object_id: int):
     return Answer.objects.filter(
-        content_type__model=model, object_id=object_id
+        content_type__model=object_model.lower(), object_id=object_id
     )
 
 
-@answer_router.delete('{int:answer_id}', response={204: None})
-# @permission_object_required(
-#     model=Answer, permissions=[is_creator_object, is_course_instructor]
-# )
-def delete_answer(request, answer_id: int, answer):
+@answer_router.delete(
+    '{int:answer_id}',
+    tags=['Resposta'],
+    summary='Deletar resposta',
+    description='Endpoint para deletar uma resposta.',
+    response={
+        204: None,
+        401: NotAuthenticated,
+        403: PermissionDeniedObjectCreator,
+        404: NotFound,
+    },
+)
+@permission_object_required(Answer, [is_creator_object])
+def delete_answer(request, answer_id: int):
+    answer = request.get_answer()
     answer.delete()
     return 204, None
 
 
-@answer_router.patch('{int:answer_id}', response=AnswerOut)
-# @permission_object_required(model=Answer, permissions=[is_creator_object])
-def update_answer(request, answer_id: int, answer, data: AnswerIn):
-    Answer.objects.filter(id=answer_id).update(**data.dict(exclude_unset=True))
-    answer.refresh_from_db()
+@answer_router.patch(
+    '{int:answer_id}',
+    tags=['Resposta'],
+    summary='Atualizar resposta',
+    description='Endpoint para atualizar uma resposta.',
+    response={
+        200: AnswerOut,
+        401: NotAuthenticated,
+        403: PermissionDeniedObjectCreator,
+        404: NotFound,
+    },
+)
+@permission_object_required(Answer, [is_creator_object])
+def update_answer(request, answer_id: int, data: AnswerUpdate):
+    answer = request.get_answer()
+    answer.content = data.content
+    answer.save()
     return answer

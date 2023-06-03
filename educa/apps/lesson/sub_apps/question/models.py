@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxLengthValidator
 from django.db import models
+from django.urls import reverse
 
 from educa.apps.core.models import CreatorBase, TimeStampedBase
 from educa.apps.course.models import Course
@@ -30,7 +31,9 @@ class Question(CreatorBase, TimeStampedBase):
     answers = GenericRelation(Answer)
 
     def get_absolute_url(self):
-        return f'todo/{self.id}'
+        return reverse(
+            'api-1.0.0:get_question', kwargs={'question_id': self.id}
+        )
 
     def __str__(self):
         return f'Question{self.id} - Course({self.course_id})'

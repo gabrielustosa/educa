@@ -1,4 +1,5 @@
 from django.test import Client
+from django.urls import reverse_lazy
 
 from educa.apps.user.auth.token import create_jwt_access_token
 from educa.apps.user.models import User
@@ -18,3 +19,7 @@ class AuthenticatedClient(Client):
         environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
 
         return environ
+
+
+def api_v1_url(url_name, **kwargs):
+    return reverse_lazy(f'api-1.0.0:{url_name}', kwargs=kwargs)

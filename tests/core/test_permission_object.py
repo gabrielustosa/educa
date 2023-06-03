@@ -6,7 +6,7 @@ from ninja import FilterSchema, Schema
 
 from educa.apps.core.permissions import (
     PermissionObjectBase,
-    _get_data_from_endpoint,
+    get_data_from_endpoint,
     is_course_instructor,
     is_enrolled,
     permission_object_required,
@@ -37,7 +37,7 @@ def test_get_data_from_endpoint():
         'data': data_class,
     }
 
-    data = _get_data_from_endpoint(kwargs)
+    data = get_data_from_endpoint(kwargs)
 
     assert data == data_class
 

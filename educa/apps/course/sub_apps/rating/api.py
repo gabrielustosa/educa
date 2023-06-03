@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from ninja import Query, Router
 
 from educa.apps.core.permissions import is_enrolled, permission_object_required
@@ -38,6 +39,20 @@ rating_router = Router()
 @permission_object_required(Rating, [is_enrolled])
 def create_rating(request, data: RatingIn):
     return Rating.objects.create(**data.dict())
+
+
+@rating_router.get(
+    '{int:rating_id}',
+    tags=['Avaliação'],
+    summary='Criar uma avaliação',
+    description='Endpoint para a criação de uma avaliação feita pelo um usuário para um curso.',
+    response={
+        200: RatingOut,
+        404: NotFound,
+    },
+)
+def get_rating(request, rating_id: int):
+    return get_object_or_404(Rating, id=rating_id)
 
 
 @rating_router.get(

@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from educa.apps.core.models import CreatorBase, TimeStampedBase
@@ -39,7 +40,7 @@ class Rating(CreatorBase, TimeStampedBase):
         ]
 
     def get_absolute_url(self):
-        return f'todo/{self.id}'
+        return reverse('api-1.0.0:get_rating', kwargs={'rating_id': self.id})
 
     def __str__(self):
         return f'Rating({self.creator}) - Course({self.course_id})=({self.rating})'

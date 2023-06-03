@@ -112,6 +112,5 @@ def update_question(request, question_id: int, data: QuestionUpdate):
     question = request.get_question()
     for key, value in data.dict(exclude_unset=True).items():
         setattr(question, key, value)
-
     question.save()
     return question
