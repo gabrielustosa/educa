@@ -4,14 +4,12 @@ from ninja.errors import HttpError
 from educa.apps.course.api import _validate_instructors_and_categories
 from educa.apps.course.models import Course
 from educa.apps.course.schema import CourseOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.category import CategoryFactory
 from tests.course.factories.course import CourseFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
-
-client = AuthenticatedClient()
 
 
 @pytest.mark.parametrize(
@@ -35,7 +33,7 @@ def test_validate_instructors_and_categories_failed(name):
         _validate_instructors_and_categories(data=data)
 
 
-def test_create_course():
+def test_create_course(client):
     category = CategoryFactory()
     instructor = UserFactory()
     payload = {
@@ -51,6 +49,7 @@ def test_create_course():
         'is_published': True,
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_course'),
         payload,
@@ -64,24 +63,27 @@ def test_create_course():
     assert client.user in course.instructors.all()
 
 
-def test_get_course():
+def test_get_course(client):
     course = CourseFactory()
 
+    client.login()
     response = client.get(api_v1_url('get_course', course_id=course.id))
 
     assert response.status_code == 200
     assert response.json() == CourseOut.from_orm(course)
 
 
-def test_get_course_that_do_not_exists():
+def test_get_course_that_do_not_exists(client):
+    client.login()
     response = client.get(api_v1_url('get_course', course_id=4510547))
 
     assert response.status_code == 404
 
 
-def test_list_course():
+def test_list_course(client):
     courses = CourseFactory.create_batch(10)
 
+    client.login()
     response = client.get(api_v1_url('list_courses'))
 
     assert response.status_code == 200
@@ -97,10 +99,11 @@ def test_list_course():
         ('language', 'dutch', {'language': 'dutch'}),
     ],
 )
-def test_list_course_filter(name, value, extra_kwargs):
+def test_list_course_filter(name, value, extra_kwargs, client):
     CourseFactory.create_batch(3)
     courses = CourseFactory.create_batch(5, **extra_kwargs)
 
+    client.login()
     response = client.get(
         api_v1_url('list_courses', query_params={name: value})
     )
@@ -111,7 +114,7 @@ def test_list_course_filter(name, value, extra_kwargs):
     ]
 
 
-def test_list_course_filter_categories():
+def test_list_course_filter_categories(client):
     CourseFactory.create_batch(3)
     courses = CourseFactory.create_batch(5)
     categories_id = [
@@ -119,6 +122,7 @@ def test_list_course_filter_categories():
     ]
     [course.categories.add(*categories_id) for course in courses]
 
+    client.login()
     response = client.get(
         api_v1_url(
             'list_courses',
@@ -132,46 +136,48 @@ def test_list_course_filter_categories():
     ]
 
 
-def test_delete_course():
+def test_delete_course(client):
     course = CourseFactory()
     user = UserFactory()
     course.instructors.add(user)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_course', course_id=course.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
     assert not Course.objects.filter(id=course.id).exists()
 
 
-def test_delete_course_that_do_not_exists():
+def test_delete_course_that_do_not_exists(client):
+    client.login()
     response = client.delete(api_v1_url('delete_course', course_id=41047))
 
     assert response.status_code == 404
 
 
-def test_delete_course_user_is_not_instructor():
+def test_delete_course_user_is_not_instructor(client):
     course = CourseFactory()
 
+    client.login()
     response = client.delete(api_v1_url('delete_course', course_id=course.id))
 
     assert response.status_code == 403
     assert Course.objects.filter(id=course.id).exists()
 
 
-def test_update_course():
+def test_update_course(client):
     course = CourseFactory()
     user = UserFactory()
     course.instructors.add(user)
     payload = {'title': 'new title', 'description': 'new description'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_course', course_id=course.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -182,9 +188,10 @@ def test_update_course():
     }
 
 
-def test_update_course_that_do_not_exists():
+def test_update_course_that_do_not_exists(client):
     payload = {'title': 'new title', 'description': 'new description'}
 
+    client.login()
     response = client.patch(
         api_v1_url('update_course', course_id=1232113),
         payload,
@@ -194,10 +201,11 @@ def test_update_course_that_do_not_exists():
     assert response.status_code == 404
 
 
-def test_update_course_user_is_not_instructor():
+def test_update_course_user_is_not_instructor(client):
     course = CourseFactory()
     payload = {'title': 'new title', 'description': 'new description'}
 
+    client.login()
     response = client.patch(
         api_v1_url('update_course', course_id=course.id),
         payload,
@@ -211,18 +219,18 @@ def test_update_course_user_is_not_instructor():
     'name, factory',
     [('categories', CategoryFactory), ('instructors', UserFactory)],
 )
-def test_update_course(name, factory):
+def test_update_course(name, factory, client):
     course = CourseFactory()
     user = UserFactory()
     course.instructors.add(user)
     objs = [obj.id for obj in factory.create_batch(5)]
     payload = {name: objs}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_course', course_id=course.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200

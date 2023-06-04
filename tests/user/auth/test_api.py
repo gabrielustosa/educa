@@ -1,16 +1,13 @@
 from django.contrib.auth.hashers import make_password
-from django.test import Client
 from pytest import mark
 
 from tests.client import api_v1_url
 from tests.user.factories.user import UserFactory
 
-client = Client()
-
 pytestmark = mark.django_db
 
 
-def test_user_login():
+def test_user_login(client):
     password = 'test'
     user = UserFactory(password=make_password(password))
 
@@ -21,7 +18,7 @@ def test_user_login():
     assert response.status_code == 200
 
 
-def test_user_login_user_does_not_exists():
+def test_user_login_user_does_not_exists(client):
     response = client.post(
         api_v1_url('login'),
         data={'email': 'test@test.com', 'password': 'test'},
@@ -30,7 +27,7 @@ def test_user_login_user_does_not_exists():
     assert response.status_code == 401
 
 
-def test_user_login_incorrect_password():
+def test_user_login_incorrect_password(client):
     password = 'test'
     user = UserFactory(password=make_password(password))
 

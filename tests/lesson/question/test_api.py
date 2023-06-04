@@ -2,7 +2,7 @@ import pytest
 
 from educa.apps.lesson.sub_apps.question.models import Question
 from educa.apps.lesson.sub_apps.question.schema import QuestionOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.lesson import LessonFactory
 from tests.lesson.factories.question import QuestionFactory
@@ -10,10 +10,8 @@ from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_question():
+def test_create_question(client):
     user = UserFactory()
     lesson = LessonFactory()
     user.instructors_courses.add(lesson.course)
@@ -24,11 +22,11 @@ def test_create_question():
         'content': 'test content',
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_question'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -37,7 +35,7 @@ def test_create_question():
     )
 
 
-def test_create_question_user_is_not_instructor():
+def test_create_question_user_is_not_instructor(client):
     lesson = LessonFactory()
     payload = {
         'lesson_id': lesson.id,
@@ -46,6 +44,7 @@ def test_create_question_user_is_not_instructor():
         'content': 'test content',
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_question'),
         payload,
@@ -55,15 +54,13 @@ def test_create_question_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_get_question():
+def test_get_question(client):
     user = UserFactory()
     question = QuestionFactory()
     user.enrolled_courses.add(question.course)
 
-    response = client.get(
-        api_v1_url('get_question', question_id=question.id),
-        user_options={'existing': user},
-    )
+    client.login(user)
+    response = client.get(api_v1_url('get_question', question_id=question.id))
 
     assert response.status_code == 200
     assert response.json() == QuestionOut.from_orm(
@@ -71,9 +68,10 @@ def test_get_question():
     )
 
 
-def test_get_question_user_is_not_enrroled():
+def test_get_question_user_is_not_enrroled(client):
     question = QuestionFactory()
 
+    client.login()
     response = client.get(
         api_v1_url('get_question', question_id=question.id),
     )
@@ -81,15 +79,14 @@ def test_get_question_user_is_not_enrroled():
     assert response.status_code == 403
 
 
-def test_list_questions():
+def test_list_questions(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
     questions = QuestionFactory.create_batch(10, course=course)
 
-    response = client.get(
-        api_v1_url('list_questions'), user_options={'existing': user}
-    )
+    client.login(user)
+    response = client.get(api_v1_url('list_questions'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -97,26 +94,27 @@ def test_list_questions():
     ]
 
 
-def test_list_questions_user_is_not_enrolled():
+def test_list_questions_user_is_not_enrolled(client):
     course = CourseFactory()
     QuestionFactory.create_batch(5, course=course)
 
+    client.login()
     response = client.get(api_v1_url('list_questions'))
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_list_question_filter_course():
+def test_list_question_filter_course(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
     messages = QuestionFactory.create_batch(5, course=course)
     QuestionFactory.create_batch(5)
 
+    client.login(user)
     response = client.get(
-        api_v1_url('list_questions', query_params={'course_id': course.id}),
-        user_options={'existing': user},
+        api_v1_url('list_questions', query_params={'course_id': course.id})
     )
 
     assert response.status_code == 200
@@ -125,7 +123,7 @@ def test_list_question_filter_course():
     ]
 
 
-def test_list_question_filter_lesson():
+def test_list_question_filter_lesson(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.enrolled_courses.add(lesson.course)
@@ -134,9 +132,9 @@ def test_list_question_filter_lesson():
     )
     QuestionFactory.create_batch(5)
 
+    client.login(user)
     response = client.get(
-        api_v1_url('list_questions', query_params={'lesson_id': lesson.id}),
-        user_options={'existing': user},
+        api_v1_url('list_questions', query_params={'lesson_id': lesson.id})
     )
 
     assert response.status_code == 200
@@ -145,7 +143,7 @@ def test_list_question_filter_lesson():
     ]
 
 
-def test_list_question_filter_title():
+def test_list_question_filter_title(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
@@ -154,9 +152,9 @@ def test_list_question_filter_title():
     QuestionFactory.create_batch(5, course=course)
     QuestionFactory.create_batch(5, course=course)
 
+    client.login(user)
     response = client.get(
-        api_v1_url('list_questions', query_params={'title': title}),
-        user_options={'existing': user},
+        api_v1_url('list_questions', query_params={'title': title})
     )
 
     assert response.status_code == 200
@@ -165,22 +163,23 @@ def test_list_question_filter_title():
     ]
 
 
-def test_delete_question():
+def test_delete_question(client):
     user = UserFactory()
     question = QuestionFactory(creator=user)
 
+    client.login(user)
     response = client.delete(
-        api_v1_url('delete_question', question_id=question.id),
-        user_options={'existing': user},
+        api_v1_url('delete_question', question_id=question.id)
     )
 
     assert response.status_code == 204
     assert not Question.objects.filter(id=question.id).exists()
 
 
-def test_delete_question_user_is_not_creator():
+def test_delete_question_user_is_not_creator(client):
     question = QuestionFactory()
 
+    client.login()
     response = client.delete(
         api_v1_url('delete_question', question_id=question.id)
     )
@@ -188,30 +187,31 @@ def test_delete_question_user_is_not_creator():
     assert response.status_code == 403
 
 
-def test_update_question():
+def test_update_question(client):
     user = UserFactory()
     question = QuestionFactory(creator=user)
     payload = {
         'title': 'new title',
     }
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_question', question_id=question.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json()['title'] == payload['title']
 
 
-def test_update_question_user_is_not_creator():
+def test_update_question_user_is_not_creator(client):
     question = QuestionFactory()
     payload = {
         'title': 'new title',
     }
 
+    client.login()
     response = client.patch(
         api_v1_url('update_question', question_id=question.id),
         payload,

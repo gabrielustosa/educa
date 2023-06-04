@@ -1,4 +1,4 @@
-from django.test import Client
+from django.test import Client as DjangoClient
 from django.urls import reverse_lazy
 
 from educa.apps.user.auth.token import create_jwt_access_token
@@ -6,18 +6,22 @@ from educa.apps.user.models import User
 from tests.user.factories.user import UserFactory
 
 
-class AuthenticatedClient(Client):
-    user: User
+class Client(DjangoClient):
+    user: User | None = None
+
+    def login(self, user: User = None):
+        if user is None:
+            user = UserFactory()
+        self.user = user
+
+    def logout(self):
+        self.user = None
 
     def _base_environ(self, **request):
-        user_options = request.pop('user_options', {})
-        existing = user_options.pop('existing', False)
-        self.user = existing if existing else UserFactory(**user_options)
-
         environ = super()._base_environ(**request)
-        token = create_jwt_access_token(self.user)
-        environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
-
+        if self.user is not None:
+            token = create_jwt_access_token(self.user)
+            environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
         return environ
 
 

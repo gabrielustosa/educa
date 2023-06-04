@@ -1,14 +1,11 @@
 import pytest
-from django.test import Client
 
 from educa.apps.user.models import User
 from tests.client import api_v1_url
 
-client = Client()
-
 
 @pytest.mark.django_db
-def test_user_create():
+def test_user_create(client):
     payload = {
         'email': 'test@gmail.com',
         'password': 'test',

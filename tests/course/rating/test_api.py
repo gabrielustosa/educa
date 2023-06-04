@@ -2,26 +2,24 @@ import pytest
 
 from educa.apps.course.sub_apps.rating.models import Rating
 from educa.apps.course.sub_apps.rating.schema import RatingOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.course.factories.rating import RatingFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_rating():
+def test_create_rating(client):
     course = CourseFactory()
     user = UserFactory()
     payload = {'course_id': course.id, 'rating': 1, 'comment': 'test'}
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_rating'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -31,25 +29,26 @@ def test_create_rating():
     assert response.json()['creator_id'] == user.id
 
 
-def test_cant_create_two_create_rating():
+def test_cant_create_two_create_rating(client):
     user = UserFactory()
     course = CourseFactory()
     RatingFactory(creator=user, course=course)
     payload = {'course_id': course.id, 'rating': 1, 'comment': 'test'}
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_rating'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 409
 
 
-def test_list_rating():
+def test_list_rating(client):
     ratings = RatingFactory.create_batch(5)
 
+    client.login()
     response = client.get(api_v1_url('list_ratings'))
 
     assert response.status_code == 200
@@ -58,12 +57,13 @@ def test_list_rating():
     ]
 
 
-def test_list_rating_course_id():
+def test_list_rating_course_id(client):
     course = CourseFactory()
     ratings = RatingFactory.create_batch(5, course=course)
     RatingFactory.create_batch(5)
     RatingFactory.create_batch(5)
 
+    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'course_id': course.id})
     )
@@ -74,11 +74,12 @@ def test_list_rating_course_id():
     ]
 
 
-def test_list_rating_comment():
+def test_list_rating_comment(client):
     ratings = RatingFactory.create_batch(5, comment='test')
     RatingFactory.create_batch(5)
     RatingFactory.create_batch(5)
 
+    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'comment': 'test'})
     )
@@ -89,11 +90,12 @@ def test_list_rating_comment():
     ]
 
 
-def test_list_rating_rating():
+def test_list_rating_rating(client):
     ratings = RatingFactory.create_batch(5, rating=2)
     RatingFactory.create_batch(5, rating=4)
     RatingFactory.create_batch(5, rating=5)
 
+    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'rating': 2})
     )
@@ -104,12 +106,13 @@ def test_list_rating_rating():
     ]
 
 
-def test_list_rating_rating_range():
+def test_list_rating_rating_range(client):
     ratings = RatingFactory.create_batch(5, rating=2)
     ratings += RatingFactory.create_batch(5, rating=4)
     RatingFactory.create_batch(5, rating=5)
     RatingFactory.create_batch(5, rating=1)
 
+    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'rating': '2|4'})
     )
@@ -121,7 +124,8 @@ def test_list_rating_rating_range():
 
 
 @pytest.mark.parametrize('param', ['a', '1:7', '2|4|4', '0|4', '2|8'])
-def test_list_rating_invalid_rating(param):
+def test_list_rating_invalid_rating(param, client):
+    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'rating': param})
     )

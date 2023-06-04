@@ -2,17 +2,15 @@ import pytest
 
 from educa.apps.course.sub_apps.message.models import Message
 from educa.apps.course.sub_apps.message.schema import MessageOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.course.factories.message import MessageFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_message():
+def test_create_message(client):
     user = UserFactory()
     course = CourseFactory()
     course.instructors.add(user)
@@ -22,11 +20,11 @@ def test_create_message():
         'content': 'test content',
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_message'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -35,7 +33,7 @@ def test_create_message():
     )
 
 
-def test_create_message_course_not_exists():
+def test_create_message_course_not_exists(client):
     user = UserFactory()
     payload = {
         'course_id': 40516,
@@ -43,17 +41,17 @@ def test_create_message_course_not_exists():
         'content': 'test content',
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_message'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 404
 
 
-def test_create_message_user_is_not_instructor():
+def test_create_message_user_is_not_instructor(client):
     course = CourseFactory()
     payload = {
         'course_id': course.id,
@@ -61,6 +59,7 @@ def test_create_message_user_is_not_instructor():
         'content': 'test content',
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_message'),
         payload,
@@ -70,14 +69,14 @@ def test_create_message_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_get_message():
+def test_get_message(client):
     user = UserFactory()
     message = MessageFactory()
     user.enrolled_courses.add(message.course)
 
+    client.login(user)
     response = client.get(
         api_v1_url('get_message', message_id=message.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -86,7 +85,8 @@ def test_get_message():
     )
 
 
-def test_get_message_not_exists():
+def test_get_message_not_exists(client):
+    client.login()
     response = client.get(
         api_v1_url('get_message', message_id=14056),
     )
@@ -94,9 +94,10 @@ def test_get_message_not_exists():
     assert response.status_code == 404
 
 
-def test_get_message_user_is_not_enrroled():
+def test_get_message_user_is_not_enrroled(client):
     message = MessageFactory()
 
+    client.login()
     response = client.get(
         api_v1_url('get_message', message_id=message.id),
     )
@@ -104,15 +105,14 @@ def test_get_message_user_is_not_enrroled():
     assert response.status_code == 403
 
 
-def test_list_messages():
+def test_list_messages(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
     messages = MessageFactory.create_batch(10, course=course)
 
-    response = client.get(
-        api_v1_url('list_messages'), user_options={'existing': user}
-    )
+    client.login(user)
+    response = client.get(api_v1_url('list_messages'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -120,26 +120,27 @@ def test_list_messages():
     ]
 
 
-def test_list_messages_user_is_not_enrolled():
+def test_list_messages_user_is_not_enrolled(client):
     course = CourseFactory()
     MessageFactory.create_batch(5, course=course)
 
+    client.login()
     response = client.get(api_v1_url('list_messages'))
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_list_message_filter_course():
+def test_list_message_filter_course(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
     messages = MessageFactory.create_batch(5, course=course)
     MessageFactory.create_batch(5)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_messages', query_params={'course_id': course.id}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -148,7 +149,7 @@ def test_list_message_filter_course():
     ]
 
 
-def test_list_message_filter_title():
+def test_list_message_filter_title(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
@@ -157,9 +158,9 @@ def test_list_message_filter_title():
     MessageFactory.create_batch(5, course=course)
     MessageFactory.create_batch(5, course=course)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_messages', query_params={'title': title}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -168,23 +169,24 @@ def test_list_message_filter_title():
     ]
 
 
-def test_delete_message():
+def test_delete_message(client):
     message = MessageFactory()
     user = UserFactory()
     user.instructors_courses.add(message.course)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_message', message_id=message.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
     assert not Message.objects.filter(id=message.id).exists()
 
 
-def test_delete_message_user_is_not_instructor():
+def test_delete_message_user_is_not_instructor(client):
     message = MessageFactory()
 
+    client.login()
     response = client.delete(
         api_v1_url('delete_message', message_id=message.id)
     )
@@ -192,7 +194,7 @@ def test_delete_message_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_update_message():
+def test_update_message(client):
     user = UserFactory()
     message = MessageFactory()
     user.instructors_courses.add(message.course)
@@ -200,23 +202,24 @@ def test_update_message():
         'title': 'new title',
     }
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_message', message_id=message.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json()['title'] == payload['title']
 
 
-def test_update_message_user_is_not_instructor():
+def test_update_message_user_is_not_instructor(client):
     message = MessageFactory()
     payload = {
         'title': 'new title',
     }
 
+    client.login()
     response = client.patch(
         api_v1_url('update_message', message_id=message.id),
         payload,

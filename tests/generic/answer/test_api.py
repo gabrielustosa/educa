@@ -2,7 +2,7 @@ import pytest
 
 from educa.apps.generic.answer.models import Answer
 from educa.apps.generic.answer.schema import AnswerOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.course.factories.message import MessageFactory
 from tests.course.factories.rating import RatingFactory
@@ -16,13 +16,11 @@ from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
-
 
 @pytest.mark.parametrize(
     'model', [MessageFactory, RatingFactory, QuestionFactory]
 )
-def test_create_answer(model):
+def test_create_answer(model, client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
@@ -34,11 +32,11 @@ def test_create_answer(model):
         'content': 'test answer',
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_answer'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -55,7 +53,7 @@ def test_create_answer(model):
         (QuestionFactory, AnswerQuestionFactory),
     ],
 )
-def test_create_answer_with_parent(model, answer_factory):
+def test_create_answer_with_parent(model, answer_factory, client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
@@ -69,11 +67,11 @@ def test_create_answer_with_parent(model, answer_factory):
         'content': 'test answer',
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_answer'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -91,7 +89,7 @@ def test_create_answer_with_parent(model, answer_factory):
     ],
 )
 def test_create_answer_with_parent_incorrect_generic_model(
-    model, answer_factory
+    model, answer_factory, client
 ):
     course = CourseFactory()
     user = UserFactory()
@@ -106,11 +104,11 @@ def test_create_answer_with_parent_incorrect_generic_model(
         'content': 'test answer',
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_answer'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 400
@@ -119,7 +117,7 @@ def test_create_answer_with_parent_incorrect_generic_model(
     }
 
 
-def test_create_answer_invalid_generic_model():
+def test_create_answer_invalid_generic_model(client):
     course = CourseFactory()
     payload = {
         'object_id': 1,
@@ -128,6 +126,7 @@ def test_create_answer_invalid_generic_model():
         'content': 'test answer',
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_answer'),
         payload,
@@ -138,7 +137,7 @@ def test_create_answer_invalid_generic_model():
     assert response.json() == {'detail': 'invalid generic model.'}
 
 
-def test_create_answer_user_is_not_enrolled():
+def test_create_answer_user_is_not_enrolled(client):
     course = CourseFactory()
     obj = RatingFactory(course=course)
     payload = {
@@ -148,6 +147,7 @@ def test_create_answer_user_is_not_enrolled():
         'content': 'test answer',
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_answer'),
         payload,
@@ -160,9 +160,10 @@ def test_create_answer_user_is_not_enrolled():
 @pytest.mark.parametrize(
     'model', [AnswerMessageFactory, AnswerRatingFactory, AnswerQuestionFactory]
 )
-def test_get_answer(model):
+def test_get_answer(model, client):
     answer = model()
 
+    client.login()
     response = client.get(api_v1_url('get_answer', answer_id=answer.id))
 
     assert response.status_code == 200
@@ -172,10 +173,11 @@ def test_get_answer(model):
 @pytest.mark.parametrize(
     'model', [AnswerMessageFactory, AnswerRatingFactory, AnswerQuestionFactory]
 )
-def test_list_answer_children(model):
+def test_list_answer_children(model, client):
     obj = model()
     children = model.create_batch(5, parent_id=obj.id)
 
+    client.login()
     response = client.get(api_v1_url('list_answer_children', answer_id=obj.id))
 
     assert response.status_code == 200
@@ -190,10 +192,11 @@ def test_list_answer_children(model):
         (QuestionFactory, AnswerQuestionFactory),
     ],
 )
-def test_list_answer(model, answer_factory):
+def test_list_answer(model, answer_factory, client):
     obj = model()
     answers = answer_factory.create_batch(5, content_object=obj)
 
+    client.login()
     response = client.get(
         api_v1_url(
             'list_answer', object_model=obj._meta.object_name, object_id=obj.id
@@ -206,7 +209,8 @@ def test_list_answer(model, answer_factory):
     ]
 
 
-def test_list_answer_invalid_model():
+def test_list_answer_invalid_model(client):
+    client.login()
     response = client.get(
         api_v1_url('list_answer', object_model='tasd#', object_id=1)
     )
@@ -218,22 +222,23 @@ def test_list_answer_invalid_model():
 @pytest.mark.parametrize(
     'model', [AnswerMessageFactory, AnswerRatingFactory, AnswerQuestionFactory]
 )
-def test_delete_answer(model):
+def test_delete_answer(model, client):
     user = UserFactory()
     obj = model(creator=user)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_answer', answer_id=obj.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
     assert not obj.__class__.objects.filter(id=obj.id).exists()
 
 
-def test_delete_answer_user_is_not_creator():
+def test_delete_answer_user_is_not_creator(client):
     obj = AnswerMessageFactory()
 
+    client.login()
     response = client.delete(api_v1_url('delete_answer', answer_id=obj.id))
 
     assert response.status_code == 403
@@ -242,16 +247,16 @@ def test_delete_answer_user_is_not_creator():
 @pytest.mark.parametrize(
     'model', [AnswerMessageFactory, AnswerRatingFactory, AnswerQuestionFactory]
 )
-def test_update_answer(model):
+def test_update_answer(model, client):
     user = UserFactory()
     obj = model(creator=user)
     payload = {'content': 'new content'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_answer', answer_id=obj.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200

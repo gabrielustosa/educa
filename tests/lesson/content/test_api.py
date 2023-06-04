@@ -7,7 +7,7 @@ from PIL import Image
 
 from educa.apps.lesson.sub_apps.content.models import Content
 from educa.apps.lesson.sub_apps.content.schema import ContentOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.content import (
     ContentFactory,
@@ -21,10 +21,8 @@ from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_content_file():
+def test_create_content_file(client):
     file = SimpleUploadedFile('test_file.txt', b'file content')
     lesson = LessonFactory()
     user = UserFactory()
@@ -36,10 +34,10 @@ def test_create_content_file():
         'course_id': lesson.course.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_content'),
         data={'data': json.dumps(payload), 'file': file},
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -48,7 +46,7 @@ def test_create_content_file():
     )
 
 
-def test_create_content_image():
+def test_create_content_image(client):
     image = Image.new('RGB', (100, 100), 'white')
     temp_file = io.BytesIO()
     image.save(temp_file, 'PNG')
@@ -62,10 +60,10 @@ def test_create_content_image():
         'course_id': lesson.course.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_content'),
         data={'data': json.dumps(payload), 'image': temp_file},
-        user_options={'existing': user},
     )
     temp_file.close()
 
@@ -78,7 +76,7 @@ def test_create_content_image():
 @pytest.mark.parametrize(
     'item', [{'content': 'text'}, {'url': 'https://google.com'}]
 )
-def test_create_content(item):
+def test_create_content(item, client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
@@ -90,10 +88,10 @@ def test_create_content(item):
         'item': item,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_content'),
         data={'data': json.dumps(payload)},
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -102,7 +100,7 @@ def test_create_content(item):
     )
 
 
-def test_create_content_with_to_many_items():
+def test_create_content_with_to_many_items(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
@@ -115,10 +113,10 @@ def test_create_content_with_to_many_items():
         'item': {'content': 'text'},
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_content'),
         data={'data': json.dumps(payload), 'file': file},
-        user_options={'existing': user},
     )
 
     assert response.status_code == 400
@@ -127,7 +125,7 @@ def test_create_content_with_to_many_items():
     }
 
 
-def test_create_content_with_no_item():
+def test_create_content_with_no_item(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
@@ -138,17 +136,17 @@ def test_create_content_with_no_item():
         'course_id': lesson.course.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_content'),
         data={'data': json.dumps(payload)},
-        user_options={'existing': user},
     )
 
     assert response.status_code == 400
     assert response.json() == {'detail': 'item object cannot be empty.'}
 
 
-def test_create_content_user_is_not_instructor():
+def test_create_content_user_is_not_instructor(client):
     lesson = LessonFactory()
     payload = {
         'title': 'test',
@@ -157,6 +155,7 @@ def test_create_content_user_is_not_instructor():
         'course_id': lesson.course.id,
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_content'),
         data={'data': json.dumps(payload)},
@@ -168,23 +167,24 @@ def test_create_content_user_is_not_instructor():
 @pytest.mark.parametrize(
     'item', [TextFactory, FileFactory, ImageFactory, FileFactory]
 )
-def test_get_content(item):
+def test_get_content(item, client):
     content = ContentFactory(item=item())
     user = UserFactory()
     user.enrolled_courses.add(content.course)
 
+    client.login(user)
     response = client.get(
         api_v1_url('get_content', content_id=content.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json() == ContentOut.from_orm(content)
 
 
-def test_get_content_user_is_not_instructor():
+def test_get_content_user_is_not_instructor(client):
     content = ContentFactory()
 
+    client.login()
     response = client.get(
         api_v1_url('get_content', content_id=content.id),
     )
@@ -192,7 +192,7 @@ def test_get_content_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_list_contents():
+def test_list_contents(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
@@ -200,9 +200,9 @@ def test_list_contents():
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_contents'),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -211,7 +211,7 @@ def test_list_contents():
     ]
 
 
-def test_list_contents_filter_module_id():
+def test_list_contents_filter_module_id(client):
     module = ModuleFactory()
     user = UserFactory()
     user.enrolled_courses.add(module.course)
@@ -221,9 +221,9 @@ def test_list_contents_filter_module_id():
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)
 
+    client.login(user)
     response = client.get(
-        api_v1_url('list_contents', query_params={'module_id': module.id}),
-        user_options={'existing': user},
+        api_v1_url('list_contents', query_params={'module_id': module.id})
     )
 
     assert response.status_code == 200
@@ -232,7 +232,7 @@ def test_list_contents_filter_module_id():
     ]
 
 
-def test_list_contents_filter_lesson_id():
+def test_list_contents_filter_lesson_id(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.enrolled_courses.add(lesson.course)
@@ -242,9 +242,9 @@ def test_list_contents_filter_lesson_id():
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)
 
+    client.login(user)
     response = client.get(
-        api_v1_url('list_contents', query_params={'lesson_id': lesson.id}),
-        user_options={'existing': user},
+        api_v1_url('list_contents', query_params={'lesson_id': lesson.id})
     )
 
     assert response.status_code == 200
@@ -253,7 +253,7 @@ def test_list_contents_filter_lesson_id():
     ]
 
 
-def test_list_contents_filter_title():
+def test_list_contents_filter_title(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
@@ -262,9 +262,9 @@ def test_list_contents_filter_title():
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_contents', query_params={'title': title}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -273,13 +273,12 @@ def test_list_contents_filter_title():
     ]
 
 
-def test_list_contents_user_is_not_enrolled():
+def test_list_contents_user_is_not_enrolled(client):
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)
 
-    response = client.get(
-        api_v1_url('list_contents'),
-    )
+    client.login()
+    response = client.get(api_v1_url('list_contents'))
 
     assert response.status_code == 200
     assert response.json() == []
@@ -288,15 +287,15 @@ def test_list_contents_user_is_not_enrolled():
 @pytest.mark.parametrize(
     'item', [TextFactory, FileFactory, ImageFactory, FileFactory]
 )
-def test_delete_content(item):
+def test_delete_content(item, client):
     item = item()
     user = UserFactory()
     content = ContentFactory(item=item)
     user.instructors_courses.add(content.course)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_content', content_id=content.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
@@ -304,9 +303,10 @@ def test_delete_content(item):
     assert not item.__class__.objects.filter(id=item.id).exists()
 
 
-def test_delete_content_user_is_not_instructor():
+def test_delete_content_user_is_not_instructor(client):
     content = ContentFactory()
 
+    client.login()
     response = client.delete(
         api_v1_url('delete_content', content_id=content.id),
     )
@@ -317,18 +317,18 @@ def test_delete_content_user_is_not_instructor():
 @pytest.mark.parametrize(
     'item', [TextFactory, FileFactory, ImageFactory, FileFactory]
 )
-def test_update_content(item):
+def test_update_content(item, client):
     item = item()
     user = UserFactory()
     content = ContentFactory(item=item)
     user.instructors_courses.add(content.course)
     payload = {'title': 'new title'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_content', content_id=content.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -336,10 +336,11 @@ def test_update_content(item):
     assert content.title == payload['title']
 
 
-def test_update_content_user_is_not_instructor():
+def test_update_content_user_is_not_instructor(client):
     content = ContentFactory()
     payload = {'title': 'new title'}
 
+    client.login()
     response = client.patch(
         api_v1_url('update_content', content_id=content.id),
         payload,

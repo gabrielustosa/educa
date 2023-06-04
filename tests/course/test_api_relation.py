@@ -2,25 +2,23 @@ import pytest
 
 from educa.apps.course.models import CourseRelation
 from educa.apps.course.schema import CourseRelationOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory, CourseRelationFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_course_relation():
+def test_create_course_relation(client):
     course = CourseFactory()
     user = UserFactory()
     payload = {'course_id': course.id}
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_course_relation'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -30,38 +28,38 @@ def test_create_course_relation():
     assert response.json()['creator_id'] == user.id
 
 
-def test_cant_create_two_create_course_relation():
+def test_cant_create_two_create_course_relation(client):
     course = CourseFactory()
     user = UserFactory()
     CourseRelation.objects.create(course=course, creator=user)
     payload = {'course_id': course.id}
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_course_relation'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 409
 
 
-def test_get_course_relation():
+def test_get_course_relation(client):
     course = CourseFactory()
     CourseRelationFactory.create_batch(5, course=course)
     user = UserFactory()
     relation = CourseRelation.objects.create(course=course, creator=user)
 
+    client.login(user)
     response = client.get(
         api_v1_url('get_course_relation', course_id=course.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json() == CourseRelationOut.from_orm(relation)
 
 
-def test_list_course_relation():
+def test_list_course_relation(client):
     CourseRelationFactory.create_batch(5)
     courses = CourseFactory.create_batch(3)
     user = UserFactory()
@@ -70,9 +68,8 @@ def test_list_course_relation():
         for course in courses
     ]
 
-    response = client.get(
-        api_v1_url('list_course_relations'), user_options={'existing': user}
-    )
+    client.login(user)
+    response = client.get(api_v1_url('list_course_relations'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -80,32 +77,32 @@ def test_list_course_relation():
     ]
 
 
-def test_delete_course_relation():
+def test_delete_course_relation(client):
     course = CourseFactory()
     CourseRelationFactory.create_batch(5, course=course)
     user = UserFactory()
     CourseRelation.objects.create(course=course, creator=user)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_course_relation', course_id=course.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
 
 
-def test_update_course_relation():
+def test_update_course_relation(client):
     course = CourseFactory()
     CourseRelationFactory.create_batch(5, course=course)
     user = UserFactory()
     relation = CourseRelation.objects.create(course=course, creator=user)
     payload = {'done': True}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_course_relation', course_id=course.id),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200

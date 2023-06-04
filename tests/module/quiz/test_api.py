@@ -6,7 +6,7 @@ from educa.apps.module.sub_apps.quiz.models import (
     QuizRelation,
 )
 from educa.apps.module.sub_apps.quiz.schema import QuestionOut, QuizOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.module.factories.module import ModuleFactory
 from tests.module.factories.quiz import QuizFactory, QuizQuestionFactory
@@ -14,10 +14,8 @@ from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_quiz():
+def test_create_quiz(client):
     module = ModuleFactory()
     user = UserFactory()
     module.course.instructors.add(user)
@@ -29,11 +27,11 @@ def test_create_quiz():
         'module_id': module.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_quiz'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -42,7 +40,7 @@ def test_create_quiz():
     )
 
 
-def test_create_quiz_user_is_not_instructor():
+def test_create_quiz_user_is_not_instructor(client):
     module = ModuleFactory()
     payload = {
         'title': 'str',
@@ -52,6 +50,7 @@ def test_create_quiz_user_is_not_instructor():
         'module_id': module.id,
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_quiz'),
         payload,
@@ -61,7 +60,7 @@ def test_create_quiz_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_create_quiz_user_is_not_instructor_module():
+def test_create_quiz_user_is_not_instructor_module(client):
     user = UserFactory()
     course = CourseFactory()
     course.instructors.add(user)
@@ -74,17 +73,17 @@ def test_create_quiz_user_is_not_instructor_module():
         'module_id': module.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_quiz'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 403
 
 
-def test_create_quiz_question():
+def test_create_quiz_question(client):
     quiz = QuizFactory()
     user = UserFactory()
     quiz.course.instructors.add(user)
@@ -98,11 +97,11 @@ def test_create_quiz_question():
         'course_id': quiz.course.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_quiz_question'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -111,7 +110,7 @@ def test_create_quiz_question():
     )
 
 
-def test_create_quiz_question_user_is_not_instructor():
+def test_create_quiz_question_user_is_not_instructor(client):
     quiz = QuizFactory()
     payload = {
         'question': 'string',
@@ -123,6 +122,7 @@ def test_create_quiz_question_user_is_not_instructor():
         'course_id': quiz.course.id,
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_quiz_question'),
         payload,
@@ -132,7 +132,7 @@ def test_create_quiz_question_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_list_quiz():
+def test_list_quiz(client):
     course = CourseFactory()
     quizzes = QuizFactory.create_batch(5, course=course)
     QuizFactory.create_batch(2)
@@ -140,15 +140,14 @@ def test_list_quiz():
     user = UserFactory()
     user.enrolled_courses.add(course)
 
-    response = client.get(
-        api_v1_url('list_quiz'), user_options={'existing': user}
-    )
+    client.login(user)
+    response = client.get(api_v1_url('list_quiz'))
 
     assert response.status_code == 200
     assert response.json() == [QuizOut.from_orm(quiz) for quiz in quizzes]
 
 
-def test_list_quiz_filter_course_id():
+def test_list_quiz_filter_course_id(client):
     course = CourseFactory()
     course2 = CourseFactory()
     quizzes = QuizFactory.create_batch(5, course=course)
@@ -157,32 +156,33 @@ def test_list_quiz_filter_course_id():
     user = UserFactory()
     user.enrolled_courses.add(course, course2)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_quiz', query_params={'course_id': course.id}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json() == [QuizOut.from_orm(quiz) for quiz in quizzes]
 
 
-def test_get_quiz():
+def test_get_quiz(client):
     quiz = QuizFactory()
     user = UserFactory()
     user.enrolled_courses.add(quiz.course)
 
+    client.login(user)
     response = client.get(
         api_v1_url('get_quiz', quiz_id=quiz.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json() == QuizOut.from_orm(quiz)
 
 
-def test_get_quiz_user_is_not_enrolled():
+def test_get_quiz_user_is_not_enrolled(client):
     quiz = QuizFactory()
 
+    client.login()
     response = client.get(
         api_v1_url('get_quiz', quiz_id=quiz.id),
     )
@@ -190,23 +190,24 @@ def test_get_quiz_user_is_not_enrolled():
     assert response.status_code == 403
 
 
-def test_delete_quiz():
+def test_delete_quiz(client):
     quiz = QuizFactory()
     user = UserFactory()
     quiz.course.instructors.add(user)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_quiz', quiz_id=quiz.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
     assert not Quiz.objects.filter(id=quiz.id).exists()
 
 
-def test_delete_quiz_user_is_not_instructor():
+def test_delete_quiz_user_is_not_instructor(client):
     quiz = QuizFactory()
 
+    client.login()
     response = client.delete(
         api_v1_url('delete_quiz', quiz_id=quiz.id),
     )
@@ -214,27 +215,28 @@ def test_delete_quiz_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_delete_quiz_question():
+def test_delete_quiz_question(client):
     question = QuizQuestionFactory()
     user = UserFactory()
     question.course.instructors.add(user)
 
+    client.login(user)
     response = client.delete(
         api_v1_url(
             'delete_quiz_question',
             question_id=question.id,
             quiz_id=question.quiz.id,
         ),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
     assert not QuizQuestion.objects.filter(id=question.id).exists()
 
 
-def test_delete_quiz_question_user_is_not_instructor():
+def test_delete_quiz_question_user_is_not_instructor(client):
     question = QuizQuestionFactory()
 
+    client.login()
     response = client.delete(
         api_v1_url(
             'delete_quiz_question',
@@ -246,16 +248,16 @@ def test_delete_quiz_question_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_update_quiz():
+def test_update_quiz(client):
     quiz = QuizFactory()
     user = UserFactory()
     quiz.course.instructors.add(user)
     payload = {'title': 'test'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_quiz', quiz_id=quiz.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
@@ -264,10 +266,11 @@ def test_update_quiz():
     assert quiz.title == payload['title']
 
 
-def test_update_quiz_user_is_not_instructor():
+def test_update_quiz_user_is_not_instructor(client):
     quiz = QuizFactory()
     payload = {'title': 'test'}
 
+    client.login()
     response = client.patch(
         api_v1_url('update_quiz', quiz_id=quiz.id),
         payload,
@@ -277,12 +280,13 @@ def test_update_quiz_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_update_quiz_question():
+def test_update_quiz_question(client):
     question = QuizQuestionFactory()
     user = UserFactory()
     question.course.instructors.add(user)
     payload = {'question': 'test'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url(
             'update_quiz_question',
@@ -290,7 +294,6 @@ def test_update_quiz_question():
             quiz_id=question.quiz.id,
         ),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
@@ -299,10 +302,11 @@ def test_update_quiz_question():
     assert question.question == payload['question']
 
 
-def test_update_quiz_question_user_is_not_instructor():
+def test_update_quiz_question_user_is_not_instructor(client):
     question = QuizQuestionFactory()
     payload = {'question': 'test'}
 
+    client.login()
     response = client.patch(
         api_v1_url(
             'update_quiz_question',
@@ -316,7 +320,7 @@ def test_update_quiz_question_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_quiz_check():
+def test_quiz_check(client):
     quiz = QuizFactory()
     questions = QuizQuestionFactory.create_batch(5, quiz=quiz)
     user = UserFactory()
@@ -327,10 +331,10 @@ def test_quiz_check():
         }
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('check_quiz', quiz_id=quiz.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
@@ -342,17 +346,17 @@ def test_quiz_check():
     }
 
 
-def test_quiz_check_wrong_response():
+def test_quiz_check_wrong_response(client):
     quiz = QuizFactory()
     questions = QuizQuestionFactory.create_batch(5, quiz=quiz)
     user = UserFactory()
     user.enrolled_courses.add(quiz.course)
     payload = {'response': {question.id: 6 for question in questions}}
 
+    client.login(user)
     response = client.post(
         api_v1_url('check_quiz', quiz_id=quiz.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
@@ -364,7 +368,7 @@ def test_quiz_check_wrong_response():
     }
 
 
-def test_quiz_check_is_not_enrolled():
+def test_quiz_check_is_not_enrolled(client):
     quiz = QuizFactory()
     questions = QuizQuestionFactory.create_batch(5, quiz=quiz)
     payload = {
@@ -373,6 +377,7 @@ def test_quiz_check_is_not_enrolled():
         }
     }
 
+    client.login()
     response = client.post(
         api_v1_url('check_quiz', quiz_id=quiz.id),
         payload,
@@ -382,7 +387,7 @@ def test_quiz_check_is_not_enrolled():
     assert response.status_code == 403
 
 
-def test_quiz_check_if_already_done():
+def test_quiz_check_if_already_done(client):
     quiz = QuizFactory()
     questions = QuizQuestionFactory.create_batch(5, quiz=quiz)
     user = UserFactory()
@@ -394,19 +399,19 @@ def test_quiz_check_if_already_done():
         }
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('check_quiz', quiz_id=quiz.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
     assert response.status_code == 409
 
 
-def test_quiz_check_with_invalid_data():
+def test_quiz_check_with_invalid_data(client):
     quiz = QuizFactory()
-    questions = QuizQuestionFactory.create_batch(5, quiz=quiz)
+    QuizQuestionFactory.create_batch(5, quiz=quiz)
     user = UserFactory()
     user.enrolled_courses.add(quiz.course)
     payload = {
@@ -419,26 +424,26 @@ def test_quiz_check_with_invalid_data():
         }
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('check_quiz', quiz_id=quiz.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
     assert response.status_code == 400
 
 
-def test_quiz_check_with_invalid_count():
+def test_quiz_check_with_invalid_count(client):
     quiz = QuizFactory()
     user = UserFactory()
     user.enrolled_courses.add(quiz.course)
     payload = {'response': {15485: 14}}
 
+    client.login(user)
     response = client.post(
         api_v1_url('check_quiz', quiz_id=quiz.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 

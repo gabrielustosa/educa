@@ -2,7 +2,7 @@ import pytest
 
 from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.schema import LessonOut
-from tests.client import AuthenticatedClient, api_v1_url
+from tests.client import api_v1_url
 from tests.course.factories.course import CourseFactory
 from tests.lesson.factories.lesson import LessonFactory
 from tests.module.factories.module import ModuleFactory
@@ -10,10 +10,8 @@ from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-client = AuthenticatedClient()
 
-
-def test_create_lesson():
+def test_create_lesson(client):
     module = ModuleFactory()
     user = UserFactory()
     module.course.instructors.add(user)
@@ -25,11 +23,11 @@ def test_create_lesson():
         'course_id': module.course.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -38,7 +36,7 @@ def test_create_lesson():
     )
 
 
-def test_create_lesson_with_invalid_course_id():
+def test_create_lesson_with_invalid_course_id(client):
     module = ModuleFactory()
     user = UserFactory()
     module.course.instructors.add(user)
@@ -50,17 +48,17 @@ def test_create_lesson_with_invalid_course_id():
         'course_id': 1014104,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 404
 
 
-def test_create_lesson_with_invalid_module_id():
+def test_create_lesson_with_invalid_module_id(client):
     payload = {
         'title': 'test',
         'description': 'description',
@@ -69,6 +67,7 @@ def test_create_lesson_with_invalid_module_id():
         'course_id': CourseFactory().id,
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_lesson'),
         payload,
@@ -78,7 +77,7 @@ def test_create_lesson_with_invalid_module_id():
     assert response.status_code == 404
 
 
-def test_create_lesson_user_not_is_instructor():
+def test_create_lesson_user_not_is_instructor(client):
     module = ModuleFactory()
     payload = {
         'title': 'test',
@@ -88,6 +87,7 @@ def test_create_lesson_user_not_is_instructor():
         'course_id': module.course.id,
     }
 
+    client.login()
     response = client.post(
         api_v1_url('create_lesson'),
         payload,
@@ -97,7 +97,7 @@ def test_create_lesson_user_not_is_instructor():
     assert response.status_code == 403
 
 
-def test_create_lesson_user_not_is_instructor_course_module():
+def test_create_lesson_user_not_is_instructor_course_module(client):
     user = UserFactory()
     course = CourseFactory()
     course.instructors.add(user)
@@ -110,53 +110,54 @@ def test_create_lesson_user_not_is_instructor_course_module():
         'course_id': course.id,
     }
 
+    client.login(user)
     response = client.post(
         api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
-        user_options={'existing': user},
     )
 
     assert response.status_code == 403
 
 
-def test_get_lesson():
+def test_get_lesson(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.enrolled_courses.add(lesson.course.id)
 
+    client.login(user)
     response = client.get(
         api_v1_url('get_lesson', lesson_id=lesson.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
     assert response.json() == LessonOut.from_orm(lesson)
 
 
-def test_get_lesson_that_do_not_exists():
+def test_get_lesson_that_do_not_exists(client):
+    client.login()
     response = client.get(api_v1_url('get_lesson', lesson_id=15017))
 
     assert response.status_code == 404
 
 
-def test_get_lesson_user_is_not_enrolled():
+def test_get_lesson_user_is_not_enrolled(client):
     lesson = LessonFactory()
 
+    client.login()
     response = client.get(api_v1_url('get_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 403
 
 
-def test_list_lessons():
+def test_list_lessons(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course.id)
     lessons = LessonFactory.create_batch(2, course=course)
 
-    response = client.get(
-        api_v1_url('list_lessons'), user_options={'existing': user}
-    )
+    client.login(user)
+    response = client.get(api_v1_url('list_lessons'))
 
     assert response.status_code == 200
     assert response.json() == [
@@ -164,25 +165,26 @@ def test_list_lessons():
     ]
 
 
-def test_list_lessons_user_is_not_enrolled():
+def test_list_lessons_user_is_not_enrolled(client):
     LessonFactory.create_batch(2)
 
+    client.login()
     response = client.get(api_v1_url('list_lessons'))
 
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_list_lessons_filter_course_id():
+def test_list_lessons_filter_course_id(client):
     LessonFactory.create_batch(2)
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course.id)
     lessons = LessonFactory.create_batch(2, course=course)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_lessons', query_params={'course_id': course.id}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -191,7 +193,7 @@ def test_list_lessons_filter_course_id():
     ]
 
 
-def test_list_lessons_filter_module_id():
+def test_list_lessons_filter_module_id(client):
     LessonFactory.create_batch(2)
     course = CourseFactory()
     module = ModuleFactory(course=course)
@@ -199,9 +201,9 @@ def test_list_lessons_filter_module_id():
     user.enrolled_courses.add(course.id)
     lessons = LessonFactory.create_batch(2, module=module, course=course)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_lessons', query_params={'module_id': module.id}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -210,7 +212,7 @@ def test_list_lessons_filter_module_id():
     ]
 
 
-def test_list_lessons_filter_title():
+def test_list_lessons_filter_title(client):
     LessonFactory.create_batch(2)
     course = CourseFactory()
     user = UserFactory()
@@ -218,9 +220,9 @@ def test_list_lessons_filter_title():
     title = 'testing *'
     lessons = LessonFactory.create_batch(2, course=course, title=title)
 
+    client.login(user)
     response = client.get(
         api_v1_url('list_lessons', query_params={'title': title}),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 200
@@ -229,44 +231,46 @@ def test_list_lessons_filter_title():
     ]
 
 
-def test_delete_lesson():
+def test_delete_lesson(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
 
+    client.login(user)
     response = client.delete(
         api_v1_url('delete_lesson', lesson_id=lesson.id),
-        user_options={'existing': user},
     )
 
     assert response.status_code == 204
     assert not Lesson.objects.filter(id=lesson.id).exists()
 
 
-def test_delete_lesson_that_do_not_exists():
+def test_delete_lesson_that_do_not_exists(client):
+    client.login()
     response = client.delete(api_v1_url('delete_lesson', lesson_id=1021))
 
     assert response.status_code == 404
 
 
-def test_delete_lesson_user_is_not_instructor():
+def test_delete_lesson_user_is_not_instructor(client):
     lesson = LessonFactory()
 
+    client.login()
     response = client.delete(api_v1_url('delete_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 403
 
 
-def test_update_lesson():
+def test_update_lesson(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
     payload = {'title': 'new title'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
@@ -275,9 +279,10 @@ def test_update_lesson():
     assert lesson.title == payload['title']
 
 
-def test_update_lesson_that_do_not_exists():
+def test_update_lesson_that_do_not_exists(client):
     payload = {'title': 'new title'}
 
+    client.login()
     response = client.patch(
         api_v1_url('update_lesson', lesson_id=3123),
         payload,
@@ -287,10 +292,11 @@ def test_update_lesson_that_do_not_exists():
     assert response.status_code == 404
 
 
-def test_update_lesson_user_is_not_instructor():
+def test_update_lesson_user_is_not_instructor(client):
     lesson = LessonFactory()
     payload = {'title': 'new title'}
 
+    client.login()
     response = client.patch(
         api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
@@ -300,33 +306,33 @@ def test_update_lesson_user_is_not_instructor():
     assert response.status_code == 403
 
 
-def test_update_lesson_user_is_not_module_instructor():
+def test_update_lesson_user_is_not_module_instructor(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
     module = ModuleFactory()
     payload = {'module_id': module.id}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
     assert response.status_code == 403
 
 
-def test_update_lesson_video():
+def test_update_lesson_video(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
     payload = {'video': 'https://www.youtube.com/watch?v=jc36BlAEWlQ'}
 
+    client.login(user)
     response = client.patch(
         api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
-        user_options={'existing': user},
         content_type='application/json',
     )
 
