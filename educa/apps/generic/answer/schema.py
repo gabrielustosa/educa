@@ -3,9 +3,9 @@ from ninja import Schema
 
 class AnswerIn(Schema):
     object_id: int
+    object_model: str
     course_id: int
     parent_id: int | None
-    object_model: str
     content: str
 
 

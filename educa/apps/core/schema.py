@@ -29,3 +29,7 @@ class DuplicatedObject(Schema):
 
 class PermissionDeniedObjectCreator(Schema):
     detail: str = 'only objecto creator is allowed to perform this action'
+
+
+class InvalidGenericModel(Schema):
+    detail: str = 'invalid generic model.'

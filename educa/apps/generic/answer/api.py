@@ -11,7 +11,7 @@ from educa.apps.core.schema import (
     NotAuthenticated,
     NotFound,
     PermissionDeniedEnrolled,
-    PermissionDeniedObjectCreator,
+    PermissionDeniedObjectCreator, InvalidGenericModel,
 )
 from educa.apps.course.models import Course
 from educa.apps.generic.answer.models import Answer
@@ -28,6 +28,7 @@ answer_router = Router()
     description='Endpoint para criar uma resposta genérica para um modelo.',
     response={
         200: AnswerOut,
+        400: InvalidGenericModel,
         401: NotAuthenticated,
         403: PermissionDeniedEnrolled,
         404: NotFound,
@@ -38,10 +39,10 @@ answer_router = Router()
 def create_answer(request, data: AnswerIn):
     answer_data = data.dict()
 
-    del answer_data['object_model']
-    object_id = answer_data.pop('object_id')
+    object_model = answer_data.pop('object_model')
+    del answer_data['object_id']
     generic_model = request.get_generic_model()
-    generic_object = get_object_or_404(generic_model, id=object_id)
+    generic_object = getattr(request, f'get_{object_model.lower()}')()
 
     parent_id = answer_data.get('parent_id')
     if parent_id is not None:
@@ -99,7 +100,7 @@ def list_answer_children(request, answer_id: int):
         404: NotFound,
     },
 )
-@validate_generic_model(Answer)
+@validate_generic_model(Answer, verify_permission=False)
 def list_answer(request, object_model: str, object_id: int):
     return Answer.objects.filter(
         content_type__model=object_model.lower(), object_id=object_id

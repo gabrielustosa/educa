@@ -9,6 +9,11 @@ from educa.apps.core.permissions import (
     get_data_from_endpoint,
     permission_object_required,
 )
+from educa.apps.generic.action.constants import (
+    action_model_permissions,
+    action_valid_models,
+)
+from educa.apps.generic.action.models import Action
 from educa.apps.generic.answer.constants import (
     content_model_permissions,
     content_valid_models,
@@ -17,10 +22,11 @@ from educa.apps.generic.answer.models import Answer
 
 generic_models = {
     Answer: (content_valid_models, content_model_permissions),
+    Action: (action_valid_models, action_model_permissions),
 }
 
 
-def validate_generic_model(model: type[type[Model]]):
+def validate_generic_model(model: type[type[Model]], verify_permission=True):
     def wrapper(func):
         @wraps(func)
         def inner(request, *args, **kwargs):
@@ -61,9 +67,9 @@ def validate_generic_model(model: type[type[Model]]):
                 for permission in func_permissions:
                     permission(request, *args, **kwargs, endpoint=func)
 
-                if object_permissions:
+                if object_permissions and verify_permission:
                     return permission_object_required(
-                        generic_model, object_permissions
+                        generic_model, object_permissions, id_kwarg='object_id'
                     )(func)(request, *args, **kwargs)
 
             return func(request, *args, **kwargs)
