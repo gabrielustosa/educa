@@ -3,6 +3,7 @@ from ninja import Router
 from ninja.errors import HttpError
 
 from educa.apps.core.permissions import (
+    is_authenticated,
     is_creator_object,
     is_enrolled,
     permission_object_required,
@@ -15,9 +16,12 @@ from educa.apps.core.schema import (
     PermissionDeniedObjectCreator,
 )
 from educa.apps.course.models import Course
+from educa.apps.course.sub_apps.message.models import Message
+from educa.apps.course.sub_apps.rating.models import Rating
 from educa.apps.generic.answer.models import Answer
 from educa.apps.generic.answer.schema import AnswerIn, AnswerOut, AnswerUpdate
 from educa.apps.generic.decorator import validate_generic_model
+from educa.apps.lesson.sub_apps.question.models import Question
 
 answer_router = Router()
 
@@ -35,7 +39,14 @@ answer_router = Router()
         404: NotFound,
     },
 )
-@validate_generic_model(Answer)
+@validate_generic_model(
+    [Message, Rating, Question],
+    {
+        Message: [is_authenticated, is_enrolled],
+        Rating: [is_authenticated, is_enrolled],
+        Question: [is_authenticated, is_enrolled],
+    },
+)
 @permission_object_required(Course, [is_enrolled])
 def create_answer(request, data: AnswerIn):
     answer_data = data.dict()
@@ -101,7 +112,7 @@ def list_answer_children(request, answer_id: int):
         404: NotFound,
     },
 )
-@validate_generic_model(Answer, verify_permission=False)
+@validate_generic_model([Message, Rating, Question])
 def list_answer(request, object_model: str, object_id: int):
     return Answer.objects.filter(
         content_type__model=object_model.lower(), object_id=object_id

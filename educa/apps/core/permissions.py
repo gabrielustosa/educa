@@ -4,8 +4,8 @@ from typing import Callable
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, Model, OuterRef, Q
 from django.http import Http404
-from ninja import FilterSchema, Schema
 
+from educa.apps.core.utils import get_attribute_from_endpoint
 from educa.apps.course.models import Course
 from educa.apps.user.auth.expection import InvalidToken
 
@@ -39,13 +39,6 @@ class PermissionObjectBase:
         pass
 
 
-def get_data_from_endpoint(kwargs):
-    for value in kwargs.values():
-        klass = value.__class__
-        if issubclass(klass, Schema) and not issubclass(klass, FilterSchema):
-            return value
-
-
 def permission_object_required(
     model: type[Model],
     permissions: list[type[PermissionObjectBase]],
@@ -71,12 +64,9 @@ def permission_object_required(
             if many:
                 query = model.objects.all()
             else:
-                object_id = kwargs.get(id_kwarg)
+                object_id = get_attribute_from_endpoint(kwargs, id_kwarg)
                 if object_id is None:
-                    data = get_data_from_endpoint(kwargs)
-                    object_id = getattr(data, id_kwarg, None)
-                    if object_id is None:
-                        return func(request, *args, **kwargs)
+                    return func(request, *args, **kwargs)
                 query = model.objects.filter(id=object_id)
 
             for permission in permissions_init:

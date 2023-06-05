@@ -1,61 +1,47 @@
 import inspect
 from functools import wraps
+from typing import Callable
 
 from django.db.models import Model
 from ninja.errors import ConfigError, HttpError
 
 from educa.apps.core.permissions import (
     PermissionObjectBase,
-    get_data_from_endpoint,
     permission_object_required,
 )
-from educa.apps.generic.action.constants import (
-    action_model_permissions,
-    action_valid_models,
-)
-from educa.apps.generic.action.models import Action
-from educa.apps.generic.answer.constants import (
-    content_model_permissions,
-    content_valid_models,
-)
-from educa.apps.generic.answer.models import Answer
-
-generic_models = {
-    Answer: (content_valid_models, content_model_permissions),
-    Action: (action_valid_models, action_model_permissions),
-}
+from educa.apps.core.utils import get_attribute_from_endpoint
 
 
-def validate_generic_model(model: type[type[Model]], verify_permission=True):
+def validate_generic_model(
+    valid_models: list[type[type[Model]]],
+    models_permissions: dict[type[type[Model]], list[type[Callable]]] = None,
+):
+    valid_models = {
+        model._meta.object_name.lower(): model for model in valid_models
+    }
+    if models_permissions is None:
+        models_permissions = {}
+
     def wrapper(func):
         @wraps(func)
         def inner(request, *args, **kwargs):
-            try:
-                valid, generic_permissions = generic_models[model]
-            except KeyError:
+            object_name = get_attribute_from_endpoint(kwargs, 'object_model')
+            if object_name is None:
                 raise ConfigError(
-                    f'miss configuration in validate_generic_model, the model {model._meta.object_name} is not registered.'
+                    'could not find the generic object_model attribute.'
                 )
 
-            generic_model_name = kwargs.get('object_model')
-            if generic_model_name is None:
-                data = get_data_from_endpoint(kwargs)
-                generic_model_name = getattr(data, 'object_model', None)
-                if data is None or generic_model_name is None:
-                    raise ConfigError(
-                        'could not find the generic model name attribute.'
-                    )
-
-            generic_model_name = generic_model_name.lower()
-            if generic_model_name not in valid:
+            object_name = object_name.lower()
+            if object_name not in valid_models:
                 raise HttpError(
                     message='invalid generic model.', status_code=400
                 )
 
-            generic_model = valid[generic_model_name]
+            generic_model = valid_models[object_name]
             setattr(request, 'get_generic_model', lambda: generic_model)
-            permissions = generic_permissions[generic_model]
-            if permissions and verify_permission:
+
+            permissions = models_permissions.get(generic_model)
+            if permissions:
                 object_permissions = [
                     permission
                     for permission in permissions
@@ -68,8 +54,17 @@ def validate_generic_model(model: type[type[Model]], verify_permission=True):
                     permission(request, *args, **kwargs, endpoint=func)
 
                 if object_permissions:
+                    object_id = get_attribute_from_endpoint(
+                        kwargs, 'object_id'
+                    )
+                    if object_id is None:
+                        raise ConfigError(
+                            'could not find the generic object_id attribute.'
+                        )
                     return permission_object_required(
-                        generic_model, object_permissions, id_kwarg='object_id'
+                        generic_model,
+                        object_permissions,
+                        id_kwarg='object_id',
                     )(func)(request, *args, **kwargs)
 
             return func(request, *args, **kwargs)

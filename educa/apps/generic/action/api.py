@@ -1,7 +1,11 @@
 from django.shortcuts import get_object_or_404
 from ninja import Router
 
-from educa.apps.core.permissions import is_enrolled, permission_object_required
+from educa.apps.core.permissions import (
+    is_authenticated,
+    is_enrolled,
+    permission_object_required,
+)
 from educa.apps.core.schema import (
     InvalidGenericModel,
     NotAuthenticated,
@@ -9,9 +13,12 @@ from educa.apps.core.schema import (
     PermissionDeniedEnrolled,
 )
 from educa.apps.course.models import Course
+from educa.apps.course.sub_apps.rating.models import Rating
 from educa.apps.generic.action.models import Action
 from educa.apps.generic.action.schema import ActionIn, ActionOut
+from educa.apps.generic.answer.models import Answer
 from educa.apps.generic.decorator import validate_generic_model
+from educa.apps.lesson.sub_apps.question.models import Question
 
 action_router = Router()
 
@@ -29,15 +36,21 @@ action_router = Router()
         404: NotFound,
     },
 )
-@validate_generic_model(Action)
+@validate_generic_model(
+    [Answer, Rating, Question],
+    {
+        Answer: [is_authenticated, is_enrolled],
+        Rating: [is_authenticated, is_enrolled],
+        Question: [is_authenticated, is_enrolled],
+    },
+)
 @permission_object_required(Course, [is_enrolled])
 def create_action(request, data: ActionIn):
     action_data = data.dict()
 
     object_model = action_data.pop('object_model')
     object_id = action_data.pop('object_id')
-    generic_model = request.get_generic_model()
-    generic_object = get_object_or_404(generic_model, id=object_id)
+    generic_object = getattr(request, f'get_{object_model.lower()}')()
 
     action = Action.objects.filter(
         creator=request.user,
@@ -67,7 +80,7 @@ def create_action(request, data: ActionIn):
         404: NotFound,
     },
 )
-@validate_generic_model(Action, verify_permission=False)
+@validate_generic_model([Answer, Rating, Question])
 def delete_action(request, object_model: str, object_id: int):
     action = get_object_or_404(
         Action,

@@ -6,7 +6,6 @@ from ninja import FilterSchema, Schema
 
 from educa.apps.core.permissions import (
     PermissionObjectBase,
-    get_data_from_endpoint,
     is_course_instructor,
     is_enrolled,
     permission_object_required,
@@ -18,28 +17,6 @@ from tests.module.factories.module import ModuleFactory
 from tests.user.factories.user import UserFactory
 
 pytestmark = pytest.mark.django_db
-
-
-class FooSchema(Schema):
-    pass
-
-
-class FooFilterSchema(FilterSchema):
-    pass
-
-
-def test_get_data_from_endpoint():
-    data_class = FooSchema()
-    kwargs = {
-        'request': None,
-        'foo_id': 2,
-        'filters': FooFilterSchema(),
-        'data': data_class,
-    }
-
-    data = get_data_from_endpoint(kwargs)
-
-    assert data == data_class
 
 
 class foo_permission(PermissionObjectBase):
