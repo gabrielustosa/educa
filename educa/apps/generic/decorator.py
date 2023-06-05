@@ -55,7 +55,7 @@ def validate_generic_model(model: type[type[Model]], verify_permission=True):
             generic_model = valid[generic_model_name]
             setattr(request, 'get_generic_model', lambda: generic_model)
             permissions = generic_permissions[generic_model]
-            if permissions:
+            if permissions and verify_permission:
                 object_permissions = [
                     permission
                     for permission in permissions
@@ -67,7 +67,7 @@ def validate_generic_model(model: type[type[Model]], verify_permission=True):
                 for permission in func_permissions:
                     permission(request, *args, **kwargs, endpoint=func)
 
-                if object_permissions and verify_permission:
+                if object_permissions:
                     return permission_object_required(
                         generic_model, object_permissions, id_kwarg='object_id'
                     )(func)(request, *args, **kwargs)

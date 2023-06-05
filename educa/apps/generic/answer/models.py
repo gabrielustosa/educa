@@ -5,6 +5,7 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxLengthValidator
 from django.db import models
+from django.urls import reverse
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
@@ -38,3 +39,6 @@ class Answer(MPTTModel, CreatorBase, TimeStampedBase):
         related_name='children',
     )
     actions = GenericRelation(Action)
+
+    def get_absolute_url(self):
+        return reverse('api-1.0.0:get_answer', kwargs={'answer_id': self.id})

@@ -8,10 +8,11 @@ from educa.apps.core.permissions import (
     permission_object_required,
 )
 from educa.apps.core.schema import (
+    InvalidGenericModel,
     NotAuthenticated,
     NotFound,
     PermissionDeniedEnrolled,
-    PermissionDeniedObjectCreator, InvalidGenericModel,
+    PermissionDeniedObjectCreator,
 )
 from educa.apps.course.models import Course
 from educa.apps.generic.answer.models import Answer
