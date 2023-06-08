@@ -285,9 +285,9 @@ def test_permission_is_creator_object_many(django_test):
     MessageFactory.create_batch(5, creator=user)
     setattr(request, 'user', user)
 
-    result = is_enrolled_view_many(request)
+    result = is_creator_object_many_view(request)
 
-    django_test.assertQuerySetEqual(Module.objects.all(), result)
+    django_test.assertQuerySetEqual(Message.objects.all(), result)
 
 
 def test_permission_is_creator_object_denied(django_test):
@@ -296,6 +296,6 @@ def test_permission_is_creator_object_denied(django_test):
     MessageFactory.create_batch(5)
     setattr(request, 'user', user)
 
-    result = is_enrolled_view_many(request)
+    result = is_creator_object_many_view(request)
 
-    django_test.assertQuerySetEqual(Module.objects.none(), result)
+    django_test.assertQuerySetEqual(Message.objects.none(), result)

@@ -22,5 +22,8 @@ class Message(CreatorBase, TimeStampedBase):
     content = models.TextField(validators=[MaxLengthValidator(1000)])
     answers = GenericRelation(Answer)
 
+    class Meta:
+        ordering = ['created']
+
     def get_absolute_url(self):
         return reverse('api-1.0.0:get_message', kwargs={'message_id': self.id})
