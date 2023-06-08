@@ -152,6 +152,11 @@ class is_enrolled(is_course_instructor):
 
 
 class is_creator_object(PermissionObjectBase):
+    def compose_query(self, query):
+        if self.many:
+            query = query.filter(creator=self.request.user)
+        return query
+
     def check(self, obj):
         if obj.creator_id != self.request.user.id:
             raise PermissionDenied
