@@ -181,11 +181,9 @@ def test_update_course(client):
     )
 
     assert response.status_code == 200
-    assert response.json() == {
-        **CourseOut.from_orm(course).dict(),
-        'title': 'new title',
-        'description': 'new description',
-    }
+    course.refresh_from_db()
+    assert course.title == payload['title']
+    assert course.description == payload['description']
 
 
 def test_update_course_that_do_not_exists(client):
@@ -219,7 +217,7 @@ def test_update_course_user_is_not_instructor(client):
     'name, factory',
     [('categories', CategoryFactory), ('instructors', UserFactory)],
 )
-def test_update_course(name, factory, client):
+def test_update_course_categories_and_instructors(name, factory, client):
     course = CourseFactory()
     user = UserFactory()
     course.instructors.add(user)

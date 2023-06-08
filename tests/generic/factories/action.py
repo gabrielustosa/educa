@@ -10,7 +10,6 @@ from tests.generic.factories.answer import (
     AnswerRatingFactory,
 )
 from tests.lesson.factories.question import QuestionFactory
-from tests.user.factories.user import UserFactory
 
 
 class ActionFactory(factory.django.DjangoModelFactory):
@@ -25,12 +24,6 @@ class ActionFactory(factory.django.DjangoModelFactory):
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.content_object)
     )
-
-    @classmethod
-    def create_batch(cls, size, **kwargs):
-        return [
-            cls.create(**kwargs, creator=UserFactory()) for _ in range(size)
-        ]
 
 
 class ActionQuestionFactory(ActionFactory):

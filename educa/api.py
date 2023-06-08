@@ -47,11 +47,6 @@ def on_integrity_error(request, exc):
             data={'detail': 'duplicated object.'},
             status=409,
         )
-    return api.create_response(
-        request,
-        data={'detail': 'database integrity error.'},
-        status=500,
-    )
 
 
 api.add_router('/course/', course_router)
