@@ -1,5 +1,6 @@
 import pytest
 from django.core.exceptions import PermissionDenied
+from django.db.models import Value
 from django.http import HttpRequest
 from ninja import Schema
 
@@ -38,6 +39,7 @@ def test_permission_object_required():
     course = CourseFactory()
     setattr(user, 'foo', True)
     setattr(request, 'user', user)
+
     result = foo_view(request, course_id=course.id)
 
     assert result == {'success': True}
@@ -108,6 +110,47 @@ def test_permission_object_required_id_kwarg_not_in_data():
     result = foo_data_empty_view(request, course=data_schema)
 
     assert result == {'success': True}
+
+
+@permission_object_required(
+    model=Course, permissions=[foo_permission], id_kwarg='foo_id'
+)
+def foo_view_with_kwarg_id(request, foo_id: int):
+    return {'success': True}
+
+
+def test_permission_object_required_with_different_id_kwarg():
+    request = HttpRequest()
+    user = UserFactory()
+    course = CourseFactory()
+    setattr(user, 'foo', True)
+    setattr(request, 'user', user)
+
+    result = foo_view_with_kwarg_id(request, foo_id=course.id)
+
+    assert result == {'success': True}
+
+
+@permission_object_required(
+    model=Course,
+    permissions=[foo_permission],
+    extra_query=lambda query: query.annotate(test_field=Value('Test')),
+)
+def foo_view_extra_query(request, course_id: int):
+    return request.get_course()
+
+
+def test_permission_object_required_extra_query():
+    request = HttpRequest()
+    user = UserFactory()
+    course = CourseFactory()
+    setattr(user, 'foo', True)
+    setattr(request, 'user', user)
+
+    result = foo_view_extra_query(request, course_id=course.id)
+
+    assert result == course
+    assert getattr(result, 'test_field') == 'Test'
 
 
 @permission_object_required(
