@@ -57,10 +57,68 @@ def test_create_course(client):
     )
 
     assert response.status_code == 200
-
     course = Course.objects.get(id=response.json()['id'])
     assert response.json() == CourseOut.from_orm(course)
     assert client.user in course.instructors.all()
+
+
+@pytest.mark.parametrize(
+    'invalid, valid',
+    [
+        ('categories', ('instructors', UserFactory)),
+        ('instructors', ('categories', CategoryFactory)),
+    ],
+)
+def test_create_course_with_invalid(client, invalid, valid):
+    i_name = invalid
+    v_name, v_model = valid
+
+    payload = {
+        'title': 'string',
+        'description': 'string',
+        'slug': 'string',
+        'language': 'string',
+        'requirements': 'string',
+        'what_you_will_learn': 'string',
+        'level': 'string',
+        i_name: [540],
+        v_name: [v_model().id],
+        'is_published': True,
+    }
+
+    client.login()
+    response = client.post(
+        api_v1_url('create_course'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_course_user_is_not_authenticated(client):
+    category = CategoryFactory()
+    instructor = UserFactory()
+    payload = {
+        'title': 'string',
+        'description': 'string',
+        'slug': 'string',
+        'language': 'string',
+        'requirements': 'string',
+        'what_you_will_learn': 'string',
+        'level': 'string',
+        'categories': [category.id],
+        'instructors': [instructor.id],
+        'is_published': True,
+    }
+
+    response = client.post(
+        api_v1_url('create_course'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
 
 
 def test_get_course(client):
@@ -157,6 +215,16 @@ def test_delete_course_that_do_not_exists(client):
     assert response.status_code == 404
 
 
+def test_delete_course_user_is_not_authenticated(client):
+    course = CourseFactory()
+
+    response = client.delete(
+        api_v1_url('delete_course', course_id=course.id),
+    )
+
+    assert response.status_code == 401
+
+
 def test_delete_course_user_is_not_instructor(client):
     course = CourseFactory()
 
@@ -184,6 +252,19 @@ def test_update_course(client):
     course.refresh_from_db()
     assert course.title == payload['title']
     assert course.description == payload['description']
+
+
+def test_update_course_user_is_not_authenticated(client):
+    course = CourseFactory()
+    payload = {'title': 'new title', 'description': 'new description'}
+
+    response = client.patch(
+        api_v1_url('update_course', course_id=course.id),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
 
 
 def test_update_course_that_do_not_exists(client):

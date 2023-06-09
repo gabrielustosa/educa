@@ -41,12 +41,12 @@ def _validate_instructors_and_categories(data):
     if categories is not None:
         valid_categories = Category.objects.filter(id__in=categories).count()
         if valid_categories != len(categories):
-            raise HttpError(message='invalid categories', status_code=400)
+            raise HttpError(message='invalid categories.', status_code=400)
 
     if instructors is not None:
         valid_instructors = User.objects.filter(id__in=instructors).count()
         if valid_instructors != len(instructors):
-            raise HttpError(message='invalid instructors', status_code=400)
+            raise HttpError(message='invalid instructors.', status_code=400)
 
     return categories, instructors
 
