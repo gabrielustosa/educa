@@ -19,6 +19,12 @@ class RatingIn(Schema):
     rating: float
     comment: str
 
+    @validator('rating')
+    def validate_rating(cls, value):
+        if value < 1 or value > 5:
+            raise ValidationError('invalid rating.')
+        return value
+
 
 class RatingOut(Schema):
     id: int

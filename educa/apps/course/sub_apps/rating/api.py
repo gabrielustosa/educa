@@ -8,6 +8,7 @@ from educa.apps.core.schema import (
     NotFound,
     PermissionDeniedEnrolled,
 )
+from educa.apps.course.models import Course
 from educa.apps.course.sub_apps.rating.models import Rating
 from educa.apps.course.sub_apps.rating.schema import (
     InvalidFilterRating,
@@ -36,7 +37,7 @@ rating_router = Router()
     },
     auth=AuthBearer(),
 )
-@permission_object_required(Rating, [is_enrolled])
+@permission_object_required(Course, [is_enrolled])
 def create_rating(request, data: RatingIn):
     return Rating.objects.create(**data.dict())
 
