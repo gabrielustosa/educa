@@ -123,7 +123,6 @@ def test_get_rating_not_found(client):
 def test_list_rating(client):
     ratings = RatingFactory.create_batch(5)
 
-    client.login()
     response = client.get(api_v1_url('list_ratings'))
 
     assert response.status_code == 200
@@ -138,7 +137,6 @@ def test_list_rating_course_id(client):
     RatingFactory.create_batch(5)
     RatingFactory.create_batch(5)
 
-    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'course_id': course.id})
     )
@@ -154,7 +152,6 @@ def test_list_rating_comment(client):
     RatingFactory.create_batch(5)
     RatingFactory.create_batch(5)
 
-    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'comment': 'test'})
     )
@@ -170,7 +167,6 @@ def test_list_rating_rating(client):
     RatingFactory.create_batch(5, rating=4)
     RatingFactory.create_batch(5, rating=5)
 
-    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'rating': 2})
     )
@@ -187,7 +183,6 @@ def test_list_rating_rating_range(client):
     RatingFactory.create_batch(5, rating=5)
     RatingFactory.create_batch(5, rating=1)
 
-    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'rating': '2|4'})
     )
@@ -200,7 +195,6 @@ def test_list_rating_rating_range(client):
 
 @pytest.mark.parametrize('param', ['a', '1:7', '2|4|4', '0|4', '2|8'])
 def test_list_rating_invalid_rating(param, client):
-    client.login()
     response = client.get(
         api_v1_url('list_ratings', query_params={'rating': param})
     )
