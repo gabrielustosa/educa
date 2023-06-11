@@ -22,6 +22,7 @@ from educa.apps.generic.answer.models import Answer
 from educa.apps.generic.answer.schema import AnswerIn, AnswerOut, AnswerUpdate
 from educa.apps.generic.decorator import validate_generic_model
 from educa.apps.lesson.sub_apps.question.models import Question
+from educa.apps.user.auth.token import AuthBearer
 
 answer_router = Router()
 
@@ -38,6 +39,7 @@ answer_router = Router()
         403: PermissionDeniedEnrolled,
         404: NotFound,
     },
+    auth=AuthBearer(),
 )
 @validate_generic_model(
     [Message, Rating, Question],
@@ -107,9 +109,7 @@ def list_answer_children(request, answer_id: int):
     description='Endpoint para retornar todas as respostas de um módelo.',
     response={
         200: list[AnswerOut],
-        401: NotAuthenticated,
-        403: PermissionDeniedEnrolled,
-        404: NotFound,
+        400: InvalidGenericModel,
     },
 )
 @validate_generic_model([Message, Rating, Question])
@@ -130,6 +130,7 @@ def list_answer(request, object_model: str, object_id: int):
         403: PermissionDeniedObjectCreator,
         404: NotFound,
     },
+    auth=AuthBearer(),
 )
 @permission_object_required(Answer, [is_creator_object])
 def delete_answer(request, answer_id: int):
@@ -149,6 +150,7 @@ def delete_answer(request, answer_id: int):
         403: PermissionDeniedObjectCreator,
         404: NotFound,
     },
+    auth=AuthBearer(),
 )
 @permission_object_required(Answer, [is_creator_object])
 def update_answer(request, answer_id: int, data: AnswerUpdate):

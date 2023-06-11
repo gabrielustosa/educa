@@ -6,5 +6,5 @@ from educa.apps.user.auth.token import AuthBearer
 
 generic_router = Router()
 
-generic_router.add_router('/answer/', answer_router, auth=AuthBearer())
+generic_router.add_router('/answer/', answer_router)
 generic_router.add_router('/action/', action_router, auth=AuthBearer())
