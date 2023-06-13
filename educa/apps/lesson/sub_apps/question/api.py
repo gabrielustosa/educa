@@ -67,7 +67,6 @@ def get_question(request, question_id: int):
     response={
         200: list[QuestionOut],
         401: NotAuthenticated,
-        403: PermissionDeniedEnrolled,
     },
 )
 @permission_object_required(Question, [is_enrolled], many=True)
