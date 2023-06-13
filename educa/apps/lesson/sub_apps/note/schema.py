@@ -6,7 +6,6 @@ from pydantic import Field, validator
 
 class NoteIn(Schema):
     lesson_id: int
-    course_id: int
     note: str
     time: str
 

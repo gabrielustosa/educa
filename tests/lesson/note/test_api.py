@@ -17,7 +17,6 @@ def test_create_note(client):
     user.enrolled_courses.add(lesson.course)
     payload = {
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
         'note': 'test title',
         'time': '10:40:10',
     }
@@ -35,6 +34,58 @@ def test_create_note(client):
     )
 
 
+def test_create_note_user_is_not_authenticated(client):
+    lesson = LessonFactory()
+    payload = {
+        'lesson_id': lesson.id,
+        'note': 'test title',
+        'time': '10:40:10',
+    }
+
+    response = client.post(
+        api_v1_url('create_note'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_note_user_is_not_enrolled(client):
+    lesson = LessonFactory()
+    payload = {
+        'lesson_id': lesson.id,
+        'note': 'test title',
+        'time': '10:40:10',
+    }
+
+    client.login()
+    response = client.post(
+        api_v1_url('create_note'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_note_lesson_does_not_exists(client):
+    payload = {
+        'lesson_id': 405,
+        'note': 'test title',
+        'time': '10:40:10',
+    }
+
+    client.login()
+    response = client.post(
+        api_v1_url('create_note'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
 def test_get_note(client):
     user = UserFactory()
     note = NoteFactory(creator=user)
@@ -44,6 +95,30 @@ def test_get_note(client):
 
     assert response.status_code == 200
     assert response.json() == NoteOut.from_orm(Note.objects.get(id=note.id))
+
+
+def test_get_note_user_is_not_authenticated(client):
+    note = NoteFactory()
+
+    response = client.get(api_v1_url('get_note', note_id=note.id))
+
+    assert response.status_code == 401
+
+
+def test_get_note_does_not_exists(client):
+    client.login()
+    response = client.get(api_v1_url('get_note', note_id=1025))
+
+    assert response.status_code == 404
+
+
+def test_get_note_user_is_not_creator(client):
+    note = NoteFactory()
+
+    client.login()
+    response = client.get(api_v1_url('get_note', note_id=note.id))
+
+    assert response.status_code == 404
 
 
 def test_list_notes(client):
@@ -93,6 +168,14 @@ def test_list_note_filter_note(client):
     assert response.json() == [NoteOut.from_orm(note) for note in notes]
 
 
+def test_list_notes_user_is_not_authenticated(client):
+    NoteFactory.create_batch(5)
+
+    response = client.get(api_v1_url('list_notes'))
+
+    assert response.status_code == 401
+
+
 def test_delete_note(client):
     user = UserFactory()
     note = NoteFactory(creator=user)
@@ -102,6 +185,30 @@ def test_delete_note(client):
 
     assert response.status_code == 204
     assert not Note.objects.filter(id=note.id).exists()
+
+
+def test_delete_note_user_is_not_authenticated(client):
+    note = NoteFactory()
+
+    response = client.delete(api_v1_url('delete_note', note_id=note.id))
+
+    assert response.status_code == 401
+
+
+def test_delete_note_does_not_exists(client):
+    client.login()
+    response = client.delete(api_v1_url('delete_note', note_id=10526))
+
+    assert response.status_code == 404
+
+
+def test_delete_note_user_is_not_creator(client):
+    note = NoteFactory()
+
+    client.login()
+    response = client.delete(api_v1_url('delete_note', note_id=note.id))
+
+    assert response.status_code == 404
 
 
 def test_update_note(client):
@@ -120,3 +227,49 @@ def test_update_note(client):
 
     assert response.status_code == 200
     assert response.json()['note'] == payload['note']
+
+
+def test_update_note_user_is_not_authenticated(client):
+    note = NoteFactory()
+    payload = {
+        'note': 'new note',
+    }
+
+    response = client.patch(
+        api_v1_url('update_note', note_id=note.id),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
+
+
+def test_update_note_does_not_exists(client):
+    payload = {
+        'note': 'new note',
+    }
+
+    client.login()
+    response = client.patch(
+        api_v1_url('update_note', note_id=45610),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
+def test_update_note_user_is_not_creator(client):
+    note = NoteFactory()
+    payload = {
+        'note': 'new note',
+    }
+
+    client.login()
+    response = client.patch(
+        api_v1_url('update_note', note_id=note.id),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404

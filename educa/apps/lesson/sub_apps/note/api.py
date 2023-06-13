@@ -7,7 +7,6 @@ from educa.apps.core.schema import (
     NotFound,
     PermissionDeniedEnrolled,
 )
-from educa.apps.course.models import Course
 from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.sub_apps.note.models import Note
 from educa.apps.lesson.sub_apps.note.schema import (
@@ -33,9 +32,9 @@ note_router = Router()
     },
 )
 @permission_object_required(Lesson, [is_enrolled])
-@permission_object_required(Course, [is_enrolled])
 def create_note(request, data: NoteIn):
-    return Note.objects.create(**data.dict())
+    lesson = request.get_lesson()
+    return Note.objects.create(**data.dict(), course_id=lesson.course_id)
 
 
 @note_router.get(
