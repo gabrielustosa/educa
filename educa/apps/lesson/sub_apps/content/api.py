@@ -49,7 +49,6 @@ content_router = Router()
     },
 )
 @permission_object_required(Lesson, [is_course_instructor])
-@permission_object_required(Course, [is_course_instructor])
 def create_content(
     request,
     data: ContentIn,
@@ -84,7 +83,10 @@ def create_content(
             status_code=400,
         )
 
-    return models.Content.objects.create(**content_dict, item=item_object)
+    lesson = request.get_lesson()
+    return models.Content.objects.create(
+        **content_dict, item=item_object, course_id=lesson.course_id
+    )
 
 
 @content_router.get(
@@ -112,7 +114,6 @@ def get_content(request, content_id: int):
     response={
         200: list[ContentOut],
         401: NotAuthenticated,
-        403: PermissionDeniedEnrolled,
     },
 )
 @permission_object_required(Content, [is_enrolled], many=True)

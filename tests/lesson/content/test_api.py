@@ -31,7 +31,6 @@ def test_create_content_file(client):
         'title': 'test',
         'description': 'test',
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
     }
 
     client.login(user)
@@ -57,7 +56,6 @@ def test_create_content_image(client):
         'title': 'test',
         'description': 'test',
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
     }
 
     client.login(user)
@@ -84,7 +82,6 @@ def test_create_content(item, client):
         'title': 'test',
         'description': 'test',
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
         'item': item,
     }
 
@@ -100,6 +97,39 @@ def test_create_content(item, client):
     )
 
 
+def test_create_content_user_is_not_authenticated(client):
+    lesson = LessonFactory()
+    payload = {
+        'title': 'test',
+        'description': 'test',
+        'lesson_id': lesson.id,
+    }
+
+    response = client.post(
+        api_v1_url('create_content'),
+        data={'data': json.dumps(payload)},
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_content_user_is_not_instructor(client):
+    lesson = LessonFactory()
+    payload = {
+        'title': 'test',
+        'description': 'test',
+        'lesson_id': lesson.id,
+    }
+
+    client.login()
+    response = client.post(
+        api_v1_url('create_content'),
+        data={'data': json.dumps(payload)},
+    )
+
+    assert response.status_code == 403
+
+
 def test_create_content_with_to_many_items(client):
     lesson = LessonFactory()
     user = UserFactory()
@@ -109,7 +139,6 @@ def test_create_content_with_to_many_items(client):
         'title': 'test',
         'description': 'test',
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
         'item': {'content': 'text'},
     }
 
@@ -133,7 +162,6 @@ def test_create_content_with_no_item(client):
         'title': 'test',
         'description': 'test',
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
     }
 
     client.login(user)
@@ -144,24 +172,6 @@ def test_create_content_with_no_item(client):
 
     assert response.status_code == 400
     assert response.json() == {'detail': 'item object cannot be empty.'}
-
-
-def test_create_content_user_is_not_instructor(client):
-    lesson = LessonFactory()
-    payload = {
-        'title': 'test',
-        'description': 'test',
-        'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
-    }
-
-    client.login()
-    response = client.post(
-        api_v1_url('create_content'),
-        data={'data': json.dumps(payload)},
-    )
-
-    assert response.status_code == 403
 
 
 @pytest.mark.parametrize(
@@ -179,6 +189,16 @@ def test_get_content(item, client):
 
     assert response.status_code == 200
     assert response.json() == ContentOut.from_orm(content)
+
+
+def test_get_content_user_is_not_authenticated(client):
+    content = ContentFactory()
+
+    response = client.get(
+        api_v1_url('get_content', content_id=content.id),
+    )
+
+    assert response.status_code == 401
 
 
 def test_get_content_user_is_not_instructor(client):
@@ -284,6 +304,16 @@ def test_list_contents_user_is_not_enrolled(client):
     assert response.json() == []
 
 
+def test_list_contents_user_is_not_authenticated(client):
+    ContentFactory.create_batch(2)
+
+    response = client.get(
+        api_v1_url('list_contents'),
+    )
+
+    assert response.status_code == 401
+
+
 @pytest.mark.parametrize(
     'item', [TextFactory, FileFactory, ImageFactory, FileFactory]
 )
@@ -303,6 +333,16 @@ def test_delete_content(item, client):
     assert not item.__class__.objects.filter(id=item.id).exists()
 
 
+def test_delete_content_user_is_not_authenticated(client):
+    content = ContentFactory()
+
+    response = client.delete(
+        api_v1_url('delete_content', content_id=content.id),
+    )
+
+    assert response.status_code == 401
+
+
 def test_delete_content_user_is_not_instructor(client):
     content = ContentFactory()
 
@@ -312,6 +352,15 @@ def test_delete_content_user_is_not_instructor(client):
     )
 
     assert response.status_code == 403
+
+
+def test_delete_content_does_not_exists(client):
+    client.login()
+    response = client.delete(
+        api_v1_url('delete_content', content_id=40),
+    )
+
+    assert response.status_code == 404
 
 
 @pytest.mark.parametrize(
@@ -336,7 +385,34 @@ def test_update_content(item, client):
     assert content.title == payload['title']
 
 
+def test_update_content_user_is_not_authenticated(client):
+    content = ContentFactory()
+    payload = {'title': 'new title'}
+
+    response = client.patch(
+        api_v1_url('update_content', content_id=content.id),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
+
+
 def test_update_content_user_is_not_instructor(client):
+    content = ContentFactory()
+    payload = {'title': 'new title'}
+
+    client.login()
+    response = client.patch(
+        api_v1_url('update_content', content_id=content.id),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 403
+
+
+def test_update_content_does_not_exists(client):
     content = ContentFactory()
     payload = {'title': 'new title'}
 

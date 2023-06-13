@@ -36,7 +36,6 @@ class ContentIn(Schema):
     description: str | None
     is_published: bool = False
     lesson_id: int
-    course_id: int
     item: TextOut | LinkOut | None = Field(
         example={'content': 'content value', 'url': 'https://google.com'}
     )
