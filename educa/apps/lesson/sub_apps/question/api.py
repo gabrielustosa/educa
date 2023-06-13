@@ -37,9 +37,9 @@ question_router = Router()
     },
 )
 @permission_object_required(Lesson, [is_enrolled])
-@permission_object_required(Course, [is_enrolled])
 def create_question(request, data: QuestionIn):
-    return Question.objects.create(**data.dict())
+    lesson = request.get_lesson()
+    return Question.objects.create(**data.dict(), course_id=lesson.course_id)
 
 
 @question_router.get(

@@ -9,7 +9,6 @@ class LessonIn(Schema):
     description: str
     video: str
     module_id: int
-    course_id: int
     is_published: bool = False
 
 

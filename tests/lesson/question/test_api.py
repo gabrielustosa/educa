@@ -17,7 +17,6 @@ def test_create_question(client):
     user.instructors_courses.add(lesson.course)
     payload = {
         'lesson_id': lesson.id,
-        'course_id': lesson.course.id,
         'title': 'test title',
         'content': 'test content',
     }
@@ -53,32 +52,11 @@ def test_create_question_user_is_not_authenticated(client):
     assert response.status_code == 401
 
 
-def test_create_question_user_is_not_instructor_lesson(client):
+def test_create_question_user_is_not_instructor(client):
     user = UserFactory()
     course = CourseFactory()
     user.instructors_courses.add(course)
 
-    payload = {
-        'lesson_id': LessonFactory().id,
-        'course_id': course.id,
-        'title': 'test title',
-        'content': 'test content',
-    }
-
-    client.login(user)
-    response = client.post(
-        api_v1_url('create_question'),
-        payload,
-        content_type='application/json',
-    )
-
-    assert response.status_code == 403
-
-
-def test_create_question_user_is_not_instructor_course(client):
-    user = UserFactory()
-    course = CourseFactory()
-    user.instructors_courses.add(course)
     payload = {
         'lesson_id': LessonFactory().id,
         'course_id': course.id,
@@ -104,28 +82,6 @@ def test_create_question_lesson_does_not_exists(client):
     payload = {
         'lesson_id': 4105,
         'course_id': course.id,
-        'title': 'test title',
-        'content': 'test content',
-    }
-
-    client.login(user)
-    response = client.post(
-        api_v1_url('create_question'),
-        payload,
-        content_type='application/json',
-    )
-
-    assert response.status_code == 404
-
-
-def test_create_question_course_does_not_exists(client):
-    user = UserFactory()
-    lesson = LessonFactory()
-    user.instructors_courses.add(lesson.course)
-
-    payload = {
-        'lesson_id': lesson.id,
-        'course_id': 1023,
         'title': 'test title',
         'content': 'test content',
     }

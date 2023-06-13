@@ -47,9 +47,9 @@ lesson_router.add_router('/note/', note_router)
     },
 )
 @permission_object_required(Module, [is_course_instructor])
-@permission_object_required(Course, [is_course_instructor])
 def create_lesson(request, data: LessonIn):
-    return Lesson.objects.create(**data.dict())
+    module = request.get_module()
+    return Lesson.objects.create(**data.dict(), course_id=module.course_id)
 
 
 @lesson_router.get(

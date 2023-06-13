@@ -20,7 +20,6 @@ def test_create_lesson(client):
         'description': 'description',
         'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
         'module_id': module.id,
-        'course_id': module.course.id,
     }
 
     client.login(user)
@@ -43,7 +42,6 @@ def test_create_lesson_user_is_not_authenticated(client):
         'description': 'description',
         'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
         'module_id': module.id,
-        'course_id': module.course.id,
     }
 
     response = client.post(
@@ -62,7 +60,6 @@ def test_create_lesson_user_not_is_instructor(client):
         'description': 'description',
         'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
         'module_id': module.id,
-        'course_id': module.course.id,
     }
 
     client.login()
@@ -73,51 +70,6 @@ def test_create_lesson_user_not_is_instructor(client):
     )
 
     assert response.status_code == 403
-
-
-def test_create_lesson_user_not_is_instructor_course_module(client):
-    user = UserFactory()
-    course = CourseFactory()
-    course.instructors.add(user)
-    module = ModuleFactory()
-    payload = {
-        'title': 'test',
-        'description': 'description',
-        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
-        'module_id': module.id,
-        'course_id': course.id,
-    }
-
-    client.login(user)
-    response = client.post(
-        api_v1_url('create_lesson'),
-        payload,
-        content_type='application/json',
-    )
-
-    assert response.status_code == 403
-
-
-def test_create_lesson_course_does_not_exists(client):
-    module = ModuleFactory()
-    user = UserFactory()
-    module.course.instructors.add(user)
-    payload = {
-        'title': 'test',
-        'description': 'description',
-        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
-        'module_id': module.id,
-        'course_id': 1014104,
-    }
-
-    client.login(user)
-    response = client.post(
-        api_v1_url('create_lesson'),
-        payload,
-        content_type='application/json',
-    )
-
-    assert response.status_code == 404
 
 
 def test_create_lesson_module_does_not_exists(client):
