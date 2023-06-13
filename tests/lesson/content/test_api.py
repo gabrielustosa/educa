@@ -216,7 +216,7 @@ def test_list_contents_filter_module_id(client):
     user = UserFactory()
     user.enrolled_courses.add(module.course)
     contents = ContentFactory.create_batch(
-        5, lesson__module=module, course=module.course
+        2, lesson__module=module, course=module.course
     )
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)

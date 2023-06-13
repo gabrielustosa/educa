@@ -77,7 +77,6 @@ def get_lesson(request, lesson_id: int):
     response={
         200: list[LessonOut],
         401: NotAuthenticated,
-        403: PermissionDeniedEnrolled,
     },
 )
 @permission_object_required(Lesson, [is_enrolled], many=True)

@@ -36,45 +36,23 @@ def test_create_lesson(client):
     )
 
 
-def test_create_lesson_with_invalid_course_id(client):
+def test_create_lesson_user_is_not_authenticated(client):
     module = ModuleFactory()
-    user = UserFactory()
-    module.course.instructors.add(user)
     payload = {
         'title': 'test',
         'description': 'description',
         'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
         'module_id': module.id,
-        'course_id': 1014104,
+        'course_id': module.course.id,
     }
 
-    client.login(user)
     response = client.post(
         api_v1_url('create_lesson'),
         payload,
         content_type='application/json',
     )
 
-    assert response.status_code == 404
-
-
-def test_create_lesson_with_invalid_module_id(client):
-    payload = {
-        'title': 'test',
-        'description': 'description',
-        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
-        'module_id': 45104,
-        'course_id': CourseFactory().id,
-    }
-
-    client.login()
-    response = client.post(
-        api_v1_url('create_lesson'),
-        payload,
-        content_type='application/json',
-    )
-
-    assert response.status_code == 404
+    assert response.status_code == 401
 
 
 def test_create_lesson_user_not_is_instructor(client):
@@ -120,6 +98,47 @@ def test_create_lesson_user_not_is_instructor_course_module(client):
     assert response.status_code == 403
 
 
+def test_create_lesson_course_does_not_exists(client):
+    module = ModuleFactory()
+    user = UserFactory()
+    module.course.instructors.add(user)
+    payload = {
+        'title': 'test',
+        'description': 'description',
+        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
+        'module_id': module.id,
+        'course_id': 1014104,
+    }
+
+    client.login(user)
+    response = client.post(
+        api_v1_url('create_lesson'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
+def test_create_lesson_module_does_not_exists(client):
+    payload = {
+        'title': 'test',
+        'description': 'description',
+        'video': 'https://www.youtube.com/watch?v=qCJ-8nBQHek',
+        'module_id': 45104,
+        'course_id': CourseFactory().id,
+    }
+
+    client.login()
+    response = client.post(
+        api_v1_url('create_lesson'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
+
+
 def test_get_lesson(client):
     lesson = LessonFactory()
     user = UserFactory()
@@ -134,11 +153,14 @@ def test_get_lesson(client):
     assert response.json() == LessonOut.from_orm(lesson)
 
 
-def test_get_lesson_that_do_not_exists(client):
-    client.login()
-    response = client.get(api_v1_url('get_lesson', lesson_id=15017))
+def test_get_lesson_user_is_not_authenticated(client):
+    lesson = LessonFactory()
 
-    assert response.status_code == 404
+    response = client.get(
+        api_v1_url('get_lesson', lesson_id=lesson.id),
+    )
+
+    assert response.status_code == 401
 
 
 def test_get_lesson_user_is_not_enrolled(client):
@@ -148,6 +170,13 @@ def test_get_lesson_user_is_not_enrolled(client):
     response = client.get(api_v1_url('get_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 403
+
+
+def test_get_lesson_does_not_exists(client):
+    client.login()
+    response = client.get(api_v1_url('get_lesson', lesson_id=15017))
+
+    assert response.status_code == 404
 
 
 def test_list_lessons(client):
@@ -231,25 +260,33 @@ def test_list_lessons_filter_title(client):
     ]
 
 
+def test_list_lessons_user_is_not_authenticated(client):
+    course = CourseFactory()
+    LessonFactory.create_batch(2, course=course)
+
+    response = client.get(api_v1_url('list_lessons'))
+
+    assert response.status_code == 401
+
+
 def test_delete_lesson(client):
     lesson = LessonFactory()
     user = UserFactory()
     user.instructors_courses.add(lesson.course)
 
     client.login(user)
-    response = client.delete(
-        api_v1_url('delete_lesson', lesson_id=lesson.id),
-    )
+    response = client.delete(api_v1_url('delete_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 204
     assert not Lesson.objects.filter(id=lesson.id).exists()
 
 
-def test_delete_lesson_that_do_not_exists(client):
-    client.login()
-    response = client.delete(api_v1_url('delete_lesson', lesson_id=1021))
+def test_delete_lesson_user_is_not_authenticated(client):
+    lesson = LessonFactory()
 
-    assert response.status_code == 404
+    response = client.delete(api_v1_url('delete_lesson', lesson_id=lesson.id))
+
+    assert response.status_code == 401
 
 
 def test_delete_lesson_user_is_not_instructor(client):
@@ -259,6 +296,13 @@ def test_delete_lesson_user_is_not_instructor(client):
     response = client.delete(api_v1_url('delete_lesson', lesson_id=lesson.id))
 
     assert response.status_code == 403
+
+
+def test_delete_lesson_does_not_exists(client):
+    client.login()
+    response = client.delete(api_v1_url('delete_lesson', lesson_id=1021))
+
+    assert response.status_code == 404
 
 
 def test_update_lesson(client):
@@ -279,17 +323,17 @@ def test_update_lesson(client):
     assert lesson.title == payload['title']
 
 
-def test_update_lesson_that_do_not_exists(client):
+def test_update_lesson_user_is_not_authenticated(client):
+    lesson = LessonFactory()
     payload = {'title': 'new title'}
 
-    client.login()
     response = client.patch(
-        api_v1_url('update_lesson', lesson_id=3123),
+        api_v1_url('update_lesson', lesson_id=lesson.id),
         payload,
         content_type='application/json',
     )
 
-    assert response.status_code == 404
+    assert response.status_code == 401
 
 
 def test_update_lesson_user_is_not_instructor(client):
@@ -321,6 +365,19 @@ def test_update_lesson_user_is_not_module_instructor(client):
     )
 
     assert response.status_code == 403
+
+
+def test_update_lesson_does_not_exists(client):
+    payload = {'title': 'new title'}
+
+    client.login()
+    response = client.patch(
+        api_v1_url('update_lesson', lesson_id=3123),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
 
 
 def test_update_lesson_video(client):

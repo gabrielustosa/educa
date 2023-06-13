@@ -79,11 +79,9 @@ def delete_lesson_relation(request, lesson_id: int):
     response={
         200: LessonRelationOut,
         401: NotAuthenticated,
-        403: PermissionDeniedEnrolled,
         404: NotFound,
     },
 )
-@permission_object_required(Lesson, [is_enrolled])
 def update_lesson_relation(
     request, lesson_id: int, data: LessonRelationUpdate
 ):

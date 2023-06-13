@@ -1,5 +1,4 @@
 import factory
-from django.utils.text import slugify
 from factory import fuzzy
 
 from educa.apps.course.models import Course, CourseRelation
@@ -11,15 +10,12 @@ class CourseFactory(factory.django.DjangoModelFactory):
         model = Course
 
     title = factory.Faker('name')
+    slug = factory.fuzzy.FuzzyText()
     description = factory.Faker('sentence')
     language = fuzzy.FuzzyChoice(['portuguese', 'spanish', 'english'])
     requirements = factory.Faker('sentence')
     what_you_will_learn = factory.Faker('sentence')
     level = fuzzy.FuzzyChoice(['beginner', 'intermediary', 'advanced'])
-
-    @factory.lazy_attribute
-    def slug(self):
-        return slugify(self.title)
 
 
 class CourseRelationFactory(factory.django.DjangoModelFactory):
