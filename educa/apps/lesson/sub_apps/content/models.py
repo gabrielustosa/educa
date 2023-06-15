@@ -59,6 +59,14 @@ class Link(models.Model):
 class File(models.Model):
     file = models.FileField(upload_to='files')
 
+    def delete(self, using=None, keep_parents=False):
+        self.file.delete()
+        return super().delete(using, keep_parents)
+
 
 class Image(models.Model):
     image = models.ImageField(upload_to='image')
+
+    def delete(self, using=None, keep_parents=False):
+        self.image.delete()
+        return super().delete(using, keep_parents)

@@ -13,7 +13,6 @@ from educa.apps.core.schema import (
     PermissionDeniedEnrolled,
     PermissionDeniedInstructor,
 )
-from educa.apps.course.models import Course
 from educa.apps.lesson.models import Lesson
 from educa.apps.lesson.sub_apps.content import models
 from educa.apps.lesson.sub_apps.content.models import Content
@@ -63,8 +62,8 @@ def create_content(
     content_dict = data.dict()
     item = content_dict.pop('item')
     if item is not None:
-        content_list[models.Text] = ('content', item.get('content', None))
-        content_list[models.Link] = ('url', item.get('url', None))
+        content_list[models.Text] = ('content', item.get('content'))
+        content_list[models.Link] = ('url', item.get('url'))
 
     item_object = None
     for model, value in content_list.items():

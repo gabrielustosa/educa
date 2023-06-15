@@ -1,7 +1,9 @@
 import io
 import json
+import os
 
 import pytest
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
@@ -39,10 +41,12 @@ def test_create_content_file(client):
         data={'data': json.dumps(payload), 'file': file},
     )
 
-    assert response.status_code == 200
-    assert response.json() == ContentOut.from_orm(
-        Content.objects.get(id=response.json()['id'])
-    )
+    content = Content.objects.get(id=response.json()['id'])
+    try:
+        assert response.status_code == 200
+        assert response.json() == ContentOut.from_orm(content)
+    finally:
+        content.delete()
 
 
 def test_create_content_image(client):
@@ -63,12 +67,13 @@ def test_create_content_image(client):
         api_v1_url('create_content'),
         data={'data': json.dumps(payload), 'image': temp_file},
     )
-    temp_file.close()
 
-    assert response.status_code == 200
-    assert response.json() == ContentOut.from_orm(
-        Content.objects.get(id=response.json()['id'])
-    )
+    content = Content.objects.get(id=response.json()['id'])
+    try:
+        assert response.status_code == 200
+        assert response.json() == ContentOut.from_orm(content)
+    finally:
+        content.delete()
 
 
 @pytest.mark.parametrize(
@@ -148,6 +153,7 @@ def test_create_content_with_to_many_items(client):
         data={'data': json.dumps(payload), 'file': file},
     )
 
+    os.remove(settings.MEDIA_ROOT / 'files' / file.name)
     assert response.status_code == 400
     assert response.json() == {
         'detail': 'you must send only one type of content to create this content.'
@@ -187,8 +193,11 @@ def test_get_content(item, client):
         api_v1_url('get_content', content_id=content.id),
     )
 
-    assert response.status_code == 200
-    assert response.json() == ContentOut.from_orm(content)
+    try:
+        assert response.status_code == 200
+        assert response.json() == ContentOut.from_orm(content)
+    finally:
+        content.delete()
 
 
 def test_get_content_user_is_not_authenticated(client):
@@ -216,7 +225,7 @@ def test_list_contents(client):
     course = CourseFactory()
     user = UserFactory()
     user.enrolled_courses.add(course)
-    contents = ContentFactory.create_batch(5, course=course)
+    contents = ContentFactory.create_batch(2, course=course)
     ContentFactory.create_batch(3)
     ContentFactory.create_batch(3)
 
@@ -380,9 +389,12 @@ def test_update_content(item, client):
         content_type='application/json',
     )
 
-    assert response.status_code == 200
     content.refresh_from_db()
-    assert content.title == payload['title']
+    try:
+        assert response.status_code == 200
+        assert content.title == payload['title']
+    finally:
+        content.delete()
 
 
 def test_update_content_user_is_not_authenticated(client):

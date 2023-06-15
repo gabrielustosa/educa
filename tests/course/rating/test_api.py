@@ -148,7 +148,7 @@ def test_list_rating_course_id(client):
 
 
 def test_list_rating_comment(client):
-    ratings = RatingFactory.create_batch(2, comment='test')
+    ratings = RatingFactory.create_batch(1, comment='test')
     RatingFactory.create_batch(5)
     RatingFactory.create_batch(5)
 
