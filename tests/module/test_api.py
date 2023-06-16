@@ -35,7 +35,25 @@ def test_create_module(client):
     assert Module.objects.filter(id=response.json()['id']).exists()
 
 
-def test_create_module_with_invalid_course_id(client):
+def test_create_module_user_is_not_authenticated(client):
+    course = CourseFactory()
+    payload = {
+        'title': 'test title',
+        'description': 'test description',
+        'course_id': course.id,
+        'is_published': True,
+    }
+
+    response = client.post(
+        api_v1_url('create_module'),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_module_course_does_not_exists(client):
     payload = {
         'title': 'test title',
         'description': 'test description',
@@ -81,7 +99,7 @@ def test_get_module(client):
     assert response.json() == ModuleOut.from_orm(module)
 
 
-def test_get_module_that_do_not_exists(client):
+def test_get_module_does_not_exists(client):
     response = client.get(api_v1_url('get_module', module_id=412))
 
     assert response.status_code == 404
@@ -141,11 +159,14 @@ def test_module_delete(client):
     assert not Module.objects.filter(id=module.id).exists()
 
 
-def test_delete_module_that_do_not_exists(client):
-    client.login()
-    response = client.delete(api_v1_url('delete_module', module_id=41560))
+def test_module_delete_user_is_not_authenticated(client):
+    module = ModuleFactory()
 
-    assert response.status_code == 404
+    response = client.delete(
+        api_v1_url('delete_module', module_id=module.id),
+    )
+
+    assert response.status_code == 401
 
 
 def test_module_delete_user_is_not_instructor(client):
@@ -157,6 +178,13 @@ def test_module_delete_user_is_not_instructor(client):
     )
 
     assert response.status_code == 403
+
+
+def test_delete_module_does_not_exists(client):
+    client.login()
+    response = client.delete(api_v1_url('delete_module', module_id=41560))
+
+    assert response.status_code == 404
 
 
 def test_module_update(client):
@@ -177,6 +205,19 @@ def test_module_update(client):
     assert module.title == payload['title']
 
 
+def test_module_update_user_is_not_authenticated(client):
+    module = ModuleFactory()
+    payload = {'title': 'new title'}
+
+    response = client.patch(
+        api_v1_url('update_module', module_id=module.id),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 401
+
+
 def test_module_update_user_is_not_instructor(client):
     module = ModuleFactory()
     payload = {'title': 'new title'}
@@ -189,3 +230,16 @@ def test_module_update_user_is_not_instructor(client):
     )
 
     assert response.status_code == 403
+
+
+def test_update_module_does_not_exists(client):
+    payload = {'title': 'new title'}
+
+    client.login()
+    response = client.patch(
+        api_v1_url('update_module', module_id=41056),
+        payload,
+        content_type='application/json',
+    )
+
+    assert response.status_code == 404
