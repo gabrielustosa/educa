@@ -75,7 +75,9 @@ class QuizQuestion(TimeStampedBase, OrderedModel):
         try:
             self.answers[self.correct_response]
         except IndexError:
-            raise ValidationError({'correct_response': 'invalid response'})
+            raise ValidationError(
+                f'invalid correct_response the response must between in array index (0-{len(self.answers) - 1}).'
+            )
         super().save(*args, **kwargs)
 
     def __str__(self):

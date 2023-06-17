@@ -148,12 +148,14 @@ def test_list_rating_course_id(client):
 
 
 def test_list_rating_comment(client):
-    ratings = RatingFactory.create_batch(1, comment='test')
+    ratings = RatingFactory.create_batch(2, comment='tesat 142zdarq41')
     RatingFactory.create_batch(5)
     RatingFactory.create_batch(5)
 
     response = client.get(
-        api_v1_url('list_ratings', query_params={'comment': 'test'})
+        api_v1_url(
+            'list_ratings', query_params={'comment': 'tesat 142zdarq41'}
+        )
     )
 
     assert response.status_code == 200

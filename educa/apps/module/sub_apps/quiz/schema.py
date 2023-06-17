@@ -9,7 +9,6 @@ class QuizIn(Schema):
     description: str
     pass_percent: int
     module_id: int
-    course_id: int
     is_published: bool | None = False
 
 
@@ -20,7 +19,6 @@ class QuestionIn(Schema):
     time_in_minutes: int
     correct_response: int
     quiz_id: int
-    course_id: int
 
 
 class QuestionOut(Schema):
@@ -76,6 +74,10 @@ class QuestionUpdate(Schema):
     answers: list[str] | None
     time_in_minutes: int | None
     correct_response: int | None
+
+
+class QuizRelationFilter(FilterSchema):
+    course_id: str | None = Field(q='quiz__course_id')
 
 
 class QuizRelationOut(Schema):

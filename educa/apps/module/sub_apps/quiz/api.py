@@ -54,10 +54,10 @@ quiz_router.add_router('/relation/', quiz_relation_router)
         404: NotFound,
     },
 )
-@permission_object_required(Course, [is_course_instructor])
 @permission_object_required(Module, [is_course_instructor])
 def create_quiz(request, data: QuizIn):
-    return Quiz.objects.create(**data.dict())
+    module = request.get_module()
+    return Quiz.objects.create(**data.dict(), course_id=module.course_id)
 
 
 @quiz_router.post(
@@ -72,10 +72,10 @@ def create_quiz(request, data: QuizIn):
         404: NotFound,
     },
 )
-@permission_object_required(Course, [is_course_instructor])
 @permission_object_required(Quiz, [is_course_instructor])
 def create_quiz_question(request, data: QuestionIn):
-    return QuizQuestion.objects.create(**data.dict())
+    quiz = request.get_quiz()
+    return QuizQuestion.objects.create(**data.dict(), course_id=quiz.course_id)
 
 
 @quiz_router.get(
@@ -86,8 +86,6 @@ def create_quiz_question(request, data: QuestionIn):
     response={
         200: list[QuizOut],
         401: NotAuthenticated,
-        403: PermissionDeniedEnrolled,
-        404: NotFound,
     },
 )
 @permission_object_required(
